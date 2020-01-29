@@ -9,8 +9,11 @@ public class TCPServerThread {
     private final int  STARTING_PORT_NUMBER = 49152;
     private final int ENDING_PORT_NUMBER = 65535;
 
-    /*
-        Finds an available port and creates a server socket
+    /**
+     * Finds an available port in the range and creates a Server Socket
+     * which is bound to the provided port
+     * @return
+     * @throws IOException
      */
     public ServerSocket getServerSocket() throws IOException
     {

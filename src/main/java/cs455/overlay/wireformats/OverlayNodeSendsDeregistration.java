@@ -1,30 +1,31 @@
 package cs455.overlay.wireformats;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.*;
 
 public class OverlayNodeSendsDeregistration implements Event {
 
-    private byte messageType;
-    private byte lengthOfIP;
+    private int messageType;
     private byte[] ipAddress;
     private int portNumber;
     private int assignedID;
+
+    public OverlayNodeSendsDeregistration(int messageType) {
+        this.messageType = messageType;
+    }
 
     public OverlayNodeSendsDeregistration(byte[] marshalledBytes) throws IOException {
 
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        messageType = din.readByte();
-        lengthOfIP = din.readByte();
+        messageType = din.readInt();
+        int lengthOfIP = din.readInt();
         ipAddress = new byte[lengthOfIP];
         din.readFully(ipAddress);
         portNumber = din.readInt();
         assignedID = din.readInt();
-
+        din.close();
+        baInputStream.close();
     }
 
     @Override
@@ -33,8 +34,21 @@ public class OverlayNodeSendsDeregistration implements Event {
     }
 
     @Override
-    public byte[] getBytes() {
-        return new byte[0];
+    public byte[] getBytes() throws IOException{
+        byte[] marshalledBytes = null;
+        ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
+        DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
+        dout.writeInt( messageType );
+        int ipAddressLength = ipAddress.length;
+        dout.writeInt(ipAddressLength);
+        dout.write(ipAddress);
+        dout.writeInt(portNumber);
+        dout.writeInt(assignedID);
+        dout.flush();
+        marshalledBytes = baOutputStream.toByteArray();
+        baOutputStream.close();
+        dout.close();
+        return marshalledBytes;
     }
 
 }

@@ -7,10 +7,14 @@ import java.io.IOException;
 
 public class RegistryReportsRegistrationStatus implements Event {
 
-    byte messageType;
+    int messageType;
     int successStatus; //assigned ID if successful, otherwise -1
     byte lengthOfInfo;
     byte[] infoString;
+
+    public RegistryReportsRegistrationStatus(int messageType) {
+        this.messageType = messageType;
+    }
 
     public RegistryReportsRegistrationStatus(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
@@ -29,7 +33,7 @@ public class RegistryReportsRegistrationStatus implements Event {
     }
 
     @Override
-    public byte[] getBytes() {
+    public byte[] getBytes() throws IOException {
         return new byte[0];
     }
 }
