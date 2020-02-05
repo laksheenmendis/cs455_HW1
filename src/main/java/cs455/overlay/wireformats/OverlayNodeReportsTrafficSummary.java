@@ -54,4 +54,21 @@ public class OverlayNodeReportsTrafficSummary implements Event {
         dout.close();
         return marshalledBytes;
     }
+
+    public int getAssignedNodeID() {
+        return assignedNodeID;
+    }
+
+    public void setAssignedNodeID(int assignedNodeID) {
+        this.assignedNodeID = assignedNodeID;
+    }
+
+    public void setTrafficDetails(int pckSent, int pckRlyd, int pckRcvd, long sumDataSent, long sumDataRcvd)
+    {
+        this.totalPacketsSent = pckSent;
+        this.totalPacketsRelayed = pckRlyd;
+        this.totalPacketsReceived = pckRcvd;
+        this.sumOfPacketDataSent = sumDataSent;
+        this.sumOfPacketDataReceived = sumDataRcvd;
+    }
 }

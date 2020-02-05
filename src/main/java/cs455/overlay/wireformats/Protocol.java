@@ -22,7 +22,5 @@ public final class Protocol {
     public static final char OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY = 'j';
     public static final char OVERLAY_NODE_SENDS_DATA = 'k';
 
-    public static final String REGISTRATION_SUCCESSFULL = "Registration Successfull";
-    public static final String REGISTRATION_FAILED = "Registration Failed";
 
 }

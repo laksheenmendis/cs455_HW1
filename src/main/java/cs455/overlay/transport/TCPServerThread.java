@@ -17,9 +17,9 @@ public class TCPServerThread implements Runnable {
 
     public TCPServerThread(int port, Node node) throws IOException {
         this.node = node;
-        if (port != -1) {
+        if (port != -1) { //Registry starting server
             this.serverSocket = new ServerSocket(port);
-        } else {
+        } else {    //Messaging Node starting server
             this.serverSocket = getServerSocket();
         }
         LOGGER.info("Listening on port " + serverSocket.getLocalPort());

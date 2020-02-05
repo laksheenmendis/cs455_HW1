@@ -39,4 +39,12 @@ public class RegistryRequestsTaskInitiate implements Event {
         dout.close();
         return marshalledBytes;
     }
+
+    public int getNoOfMessages() {
+        return noOfMessages;
+    }
+
+    public void setNoOfMessages(int noOfMessages) {
+        this.noOfMessages = noOfMessages;
+    }
 }

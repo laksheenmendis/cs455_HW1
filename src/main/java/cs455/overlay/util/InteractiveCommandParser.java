@@ -1,6 +1,9 @@
 package cs455.overlay.util;
 
+import cs455.overlay.node.MessagingNode;
 import cs455.overlay.node.Node;
+import cs455.overlay.node.Registry;
+import org.apache.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,6 +20,7 @@ public class InteractiveCommandParser implements Runnable{
     public static final String CMD_EXIT_OVERLAY = "exit-overlay";
     public static final String CMD_LIST_ROUTING_TABLES = "list-routing-tables";
     private Node node;
+    static Logger LOGGER = Logger.getLogger(InteractiveCommandParser.class.getName());
 
     public InteractiveCommandParser(Node node) {
         this.node = node;
@@ -39,30 +43,40 @@ public class InteractiveCommandParser implements Runnable{
 
             try {
                 String command = br.readLine();
+                String[] inArr = command.split(" ");
 
                 // Registry commands
-                if (command.equalsIgnoreCase(CMD_LIST_MESSAGING_NODES)) {
+                if ( inArr[0].equals(CMD_LIST_MESSAGING_NODES) && node instanceof Registry) {
                     //information about the messaging nodes (hostname, port-number, and node ID) being listed.
                     // Information for each messaging node should be listed on a separate line
-                } else if (command.startsWith(CMD_SETUP_OVERLAY)) {       //registry setting up the overlay
-                    //TODO split and get the number of entries in the routing table
+                } else if (inArr[0].equals(CMD_SETUP_OVERLAY) && node instanceof Registry) {       //registry setting up the overlay
                     //sending every messaging node the REGISTRY_SENDS_NODE_MANIFEST message
-                } else if (command.equals(CMD_LIST_ROUTING_TABLES)) {
+
+                    int routingTableEntries = Integer.parseInt(inArr[1]);
+
+
+                } else if ( inArr[0].equals(CMD_LIST_ROUTING_TABLES) && node instanceof Registry) {
                     //information about the computed routing tables for each node in the overlay. Each messaging node’s
                     // information should be well separated (i.e., have 3-4 blank lines between node listings) and should
                     // include the node’s IP address, portnum, and logical-ID
-                } else if (command.startsWith(CMD_START)) {
-                    //TODO split and get the number of messages to send out
+                } else if ( inArr[0].equals(CMD_START) && node instanceof Registry) {
                     //results in the registry sending the REGISTRY_REQUESTS_TASK_INITIATE to all
                     //nodes within the overlay
+                    int noOfMessages = Integer.parseInt(inArr[1]);
                 }
                 // Messaging Node commands
-                else if (command.equals(CMD_PRINT_COUNTERS_AND_DIAGNOSTICS)) {
+                else if ( inArr[0].equals(CMD_PRINT_COUNTERS_AND_DIAGNOSTICS) && node instanceof MessagingNode) {
                     //information (to the console using System.out) about the number of messages that have been sent,
                     // received, and relayed along with the sums for the messages that have been sent from and received at the node
-                } else if (command.equals(CMD_EXIT_OVERLAY)) {
+                } else if ( inArr[0].equals(CMD_EXIT_OVERLAY) && node instanceof MessagingNode) {
                     //allows a messaging node to exit the overlay. The messaging node should first send a deregistration message
                     //to the registry and await a response before exiting and terminating the process
+                    MessagingNode messagingNode = (MessagingNode)node;
+                    messagingNode.sendDeregisterEvent();
+                }
+                else
+                {
+                    LOGGER.info("[InteractiveCommandParser_readAndProcess] Invalid command");
                 }
 
 

@@ -1,5 +1,7 @@
 package cs455.overlay.transport;
 
+import cs455.overlay.util.Constants;
+
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,7 +9,6 @@ import java.util.Map;
 public class TCPConnectionsCache {
 
     private static Map<String, Socket> connectionsCache = new HashMap<>();
-    private static final String JOINING_CHARACTER = "#";
 
     public static void add( Socket socket)
     {
@@ -25,6 +26,11 @@ public class TCPConnectionsCache {
 
     private static String generateKey(Socket socket)
     {
-       return new String(socket.getInetAddress().getAddress()) + JOINING_CHARACTER +  socket.getPort();
+       return new String(socket.getInetAddress().getAddress()) + Constants.JOINING_CHARACTER +  socket.getPort();
+    }
+
+    public static boolean inCache(Socket socket) {
+
+        return connectionsCache.containsKey(generateKey(socket));
     }
 }

@@ -51,4 +51,27 @@ public class OverlayNodeSendsDeregistration implements Event {
         return marshalledBytes;
     }
 
+    public byte[] getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(byte[] ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public int getPortNumber() {
+        return portNumber;
+    }
+
+    public void setPortNumber(int portNumber) {
+        this.portNumber = portNumber;
+    }
+
+    public int getAssignedID() {
+        return assignedID;
+    }
+
+    public void setAssignedID(int assignedID) {
+        this.assignedID = assignedID;
+    }
 }

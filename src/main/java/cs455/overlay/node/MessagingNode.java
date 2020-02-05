@@ -54,10 +54,7 @@ public class MessagingNode implements Node, Runnable {
 
                 try
                 {
-                    Event registerEvent = messagingNode.getRegisterEvent();
-                    TCPConnection.TCPSender senderToRegistry = new TCPConnection.TCPSender(messagingNode.socket);
-                    senderToRegistry.sendData(registerEvent.getBytes());
-                    LOGGER.info("[MessagingNode_main] Registration Request sent");
+                    messagingNode.sendRegisterEvent();
 
                     TCPConnection.TCPReceiverThread receiverFromRegistry = new TCPConnection.TCPReceiverThread(messagingNode.socket, messagingNode);
                     Thread registryReceiver = new Thread(receiverFromRegistry);
@@ -88,7 +85,7 @@ public class MessagingNode implements Node, Runnable {
     }
 
     @Override
-    public void onEvent(Event event, Socket socket) throws IOException  {
+    public void onEvent(Event event, Socket socket) {
 
         char messageType = event.getType();
 
@@ -122,8 +119,23 @@ public class MessagingNode implements Node, Runnable {
     }
 
     private void readDeRegisterResponse(RegistryReportsDeregistrationStatus event) {
-
-        //TODO if this is successful terminate the server
+        int status = event.getSuccessStatus();
+        if( status != -1 && status == this.ID)
+        {
+            LOGGER.info("[MessagingNode_readDeRegisterResponse] Deregistration successful");
+            try {
+                this.socket.close();
+                this.serverThread.terminateServer();
+            } catch (IOException e) {
+                LOGGER.info("[MessagingNode_readDeRegisterResponse] " + e.getMessage());
+                e.printStackTrace();
+                this.serverT.stop();
+            }
+        }
+        else // error in deregistration
+        {
+            LOGGER.info("[MessagingNode_readDeRegisterResponse] Deregistration unsuccessful " + event.getInfoString());
+        }
     }
 
     private void readRegisterResponse(RegistryReportsRegistrationStatus event) {
@@ -150,11 +162,49 @@ public class MessagingNode implements Node, Runnable {
      * Populates the register event to be sent to the registry
      * @return
      */
-    private OverlayNodeSendsRegistration getRegisterEvent() throws UnknownHostException
+    private OverlayNodeSendsRegistration getRegisterEvent()
     {
         OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);;
-
         e1.setIpAddress(this.serverThread.getServerAddress());
+        e1.setPortNumber(this.serverThread.getServerPort());
+        return e1;
+    }
+
+    /**
+     * Handles sending of events
+     * @param event
+     */
+    private void sendEvent(Event event)
+    {
+        try {
+            TCPConnection.TCPSender senderToRegistry = new TCPConnection.TCPSender(this.socket);
+            senderToRegistry.sendData(event.getBytes());
+            LOGGER.info("[MessagingNode_sendEvent] " + event.getClass().getSimpleName() +" Request sent");
+        } catch (IOException e) {
+            LOGGER.info("[MessagingNode_sendEvent] " + event.getClass().getSimpleName() + " Request sending failed");
+            e.printStackTrace();
+        }
+    }
+
+    private void sendRegisterEvent() {
+        Event registerEvent = getRegisterEvent();
+        sendEvent(registerEvent);
+    }
+
+    public void sendDeregisterEvent() {
+        Event deregisterEvent = getDeregisterEvent();
+        sendEvent(deregisterEvent);
+    }
+
+    /**
+     * Populates the deregister event to be sent to the registry
+     * @return
+     */
+    public OverlayNodeSendsDeregistration getDeregisterEvent()
+    {
+        OverlayNodeSendsDeregistration e1 = (OverlayNodeSendsDeregistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_DEREGISTRATION);
+        e1.setIpAddress(this.serverThread.getServerAddress());
+        e1.setAssignedID(this.ID);
         e1.setPortNumber(this.serverThread.getServerPort());
         return e1;
     }

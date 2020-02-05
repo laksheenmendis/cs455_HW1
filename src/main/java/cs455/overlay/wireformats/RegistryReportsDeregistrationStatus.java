@@ -48,4 +48,20 @@ public class RegistryReportsDeregistrationStatus implements Event {
         dout.close();
         return marshalledBytes;
     }
+
+    public int getSuccessStatus() {
+        return successStatus;
+    }
+
+    public void setSuccessStatus(int successStatus) {
+        this.successStatus = successStatus;
+    }
+
+    public String getInfoString() {
+        return infoString;
+    }
+
+    public void setInfoString(String infoString) {
+        this.infoString = infoString;
+    }
 }
