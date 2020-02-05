@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public interface Event {
 
-    int getType();
+    char getType();
 
     byte[] getBytes()  throws IOException;
 

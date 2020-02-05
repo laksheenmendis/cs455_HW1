@@ -1,0 +1,30 @@
+Listening on port 12001
+[MessagingNode_main] connected to Registry
+Listening on port 49152
+[TCPSender_sendData] data sent 
+[MessagingNode_main] Registration Request sent
+[TCPReceiverThread]_[run] OverlayNodeSendsRegistration event received at Registry
+[Registry_onEvent] received a
+[Registry_registerMessagingNode] started 
+[Registry_getRegistrationResponse] Registration Status generated 
+[TCPSender_sendData] data sent 
+[TCPReceiverThread]_[run] RegistryReportsRegistrationStatus event received at MessagingNode
+[MessagingNode_readRegisterResponse] Assigned ID to messaging node is 0
+[TCPReceiverThread]_[run] IOException null
+Listening on port 12001
+[MessagingNode_main] connected to Registry
+Listening on port 49152
+[TCPSender_sendData] data sent 
+[MessagingNode_main] Registration Request sent
+[TCPReceiverThread]_[run] OverlayNodeSendsRegistration event received at Registry
+[Registry_onEvent] received a
+[Registry_registerMessagingNode] started 
+[MessagingNode_main] connected to Registry
+Listening on port 49153
+[TCPSender_sendData] data sent 
+[MessagingNode_main] Registration Request sent
+[TCPReceiverThread]_[run] OverlayNodeSendsRegistration event received at Registry
+[Registry_onEvent] received a
+[Registry_registerMessagingNode] started 
+[TCPReceiverThread]_[run] IOException null
+[TCPReceiverThread]_[run] IOException null

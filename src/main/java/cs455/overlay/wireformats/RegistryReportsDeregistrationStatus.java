@@ -4,30 +4,30 @@ import java.io.*;
 
 public class RegistryReportsDeregistrationStatus implements Event {
 
-    int messageType;
-    int successStatus; //assigned ID if successful, otherwise -1
-    String infoString;
+    private char messageType;
+    private int successStatus; //assigned ID if successful, otherwise -1
+    private String infoString;
 
-    public RegistryReportsDeregistrationStatus(int messageType) {
-        this.messageType = messageType;
+    public RegistryReportsDeregistrationStatus() {
+        this.messageType = getType();
     }
 
     public RegistryReportsDeregistrationStatus(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        messageType = din.readInt();
-        successStatus = din.readInt();
+        this.messageType = din.readChar();
+        this.successStatus = din.readInt();
         int lengthOfInfo = din.readInt();
         byte [] infoStringBytes = new byte[lengthOfInfo];
         din.readFully(infoStringBytes);
-        infoString = new String(infoStringBytes);
-        din.close();
+        this.infoString = new String(infoStringBytes);
         baInputStream.close();
+        din.close();
     }
 
     @Override
-    public int getType() {
+    public char getType() {
         return Protocol.REGISTRY_REPORTS_DEREGISTRATION_STATUS;
     }
 
@@ -36,7 +36,7 @@ public class RegistryReportsDeregistrationStatus implements Event {
         byte[] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeInt( messageType );
+        dout.writeChar( messageType );
         dout.writeInt( successStatus );
         byte[] infoStringBytes = infoString.getBytes();
         int infoLength = infoStringBytes.length;

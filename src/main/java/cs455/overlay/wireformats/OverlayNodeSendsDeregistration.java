@@ -4,13 +4,13 @@ import java.io.*;
 
 public class OverlayNodeSendsDeregistration implements Event {
 
-    private int messageType;
+    private char messageType;
     private byte[] ipAddress;
     private int portNumber;
     private int assignedID;
 
-    public OverlayNodeSendsDeregistration(int messageType) {
-        this.messageType = messageType;
+    public OverlayNodeSendsDeregistration() {
+        this.messageType = getType();
     }
 
     public OverlayNodeSendsDeregistration(byte[] marshalledBytes) throws IOException {
@@ -18,18 +18,18 @@ public class OverlayNodeSendsDeregistration implements Event {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        messageType = din.readInt();
+        this.messageType = din.readChar();
         int lengthOfIP = din.readInt();
-        ipAddress = new byte[lengthOfIP];
-        din.readFully(ipAddress);
-        portNumber = din.readInt();
-        assignedID = din.readInt();
-        din.close();
+        this.ipAddress = new byte[lengthOfIP];
+        din.readFully(this.ipAddress, 0, lengthOfIP);
+        this.portNumber = din.readInt();
+        this.assignedID = din.readInt();
         baInputStream.close();
+        din.close();
     }
 
     @Override
-    public int getType() {
+    public char getType() {
         return Protocol.OVERLAY_NODE_SENDS_DEREGISTRATION;
     }
 
@@ -38,10 +38,10 @@ public class OverlayNodeSendsDeregistration implements Event {
         byte[] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeInt( messageType );
+        dout.writeChar( messageType );
         int ipAddressLength = ipAddress.length;
         dout.writeInt(ipAddressLength);
-        dout.write(ipAddress);
+        dout.write(ipAddress, 0, ipAddressLength);
         dout.writeInt(portNumber);
         dout.writeInt(assignedID);
         dout.flush();

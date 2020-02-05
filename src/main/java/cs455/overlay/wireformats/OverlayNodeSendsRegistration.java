@@ -4,12 +4,12 @@ import java.io.*;
 
 public class OverlayNodeSendsRegistration implements Event {
 
-    private int messageType;
+    private char messageType;
     private byte[] ipAddress;
     private int portNumber;
 
-    public OverlayNodeSendsRegistration(int messageType) {
-        this.messageType = messageType;
+    public OverlayNodeSendsRegistration() {
+        this.messageType = getType();
     }
 
     public OverlayNodeSendsRegistration(byte[] marshalledBytes) throws IOException {
@@ -17,17 +17,17 @@ public class OverlayNodeSendsRegistration implements Event {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        messageType = din.readInt();
+        this.messageType = din.readChar();
         int lengthOfIP = din.readInt();
-        ipAddress = new byte[lengthOfIP];
-        din.readFully(ipAddress);
-        portNumber = din.readInt();
+        this.ipAddress = new byte[lengthOfIP];
+        din.readFully(this.ipAddress,0, lengthOfIP);
+        this.portNumber = din.readInt();
         baInputStream.close();
         din.close();
     }
 
     @Override
-    public int getType() {
+    public char getType() {
         return Protocol.OVERLAY_NODE_SENDS_REGISTRATION;
     }
 
@@ -36,23 +36,16 @@ public class OverlayNodeSendsRegistration implements Event {
         byte[] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeInt( messageType );
+        dout.writeChar( messageType );
         int ipAddressLength = ipAddress.length;
         dout.writeInt(ipAddressLength);
-        dout.write(ipAddress);
+        dout.write(ipAddress, 0, ipAddressLength);
+        dout.writeInt(portNumber);
         dout.flush();
         marshalledBytes = baOutputStream.toByteArray();
         baOutputStream.close();
         dout.close();
         return marshalledBytes;
-    }
-
-    public int getMessageType() {
-        return messageType;
-    }
-
-    public void setMessageType(int messageType) {
-        this.messageType = messageType;
     }
 
     public byte[] getIpAddress() {

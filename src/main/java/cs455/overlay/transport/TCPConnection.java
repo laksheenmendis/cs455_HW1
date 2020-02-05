@@ -1,5 +1,9 @@
 package cs455.overlay.transport;
 
+import cs455.overlay.node.Node;
+import cs455.overlay.wireformats.Event;
+import cs455.overlay.wireformats.EventFactory;
+import org.apache.log4j.Logger;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -11,6 +15,7 @@ public class TCPConnection {
     public static class TCPSender{
         private Socket socket;
         private DataOutputStream dout;
+        static Logger LOGGER = Logger.getLogger(TCPReceiverThread.class.getName());
 
         public TCPSender(Socket socket) throws IOException {
             this.socket = socket;
@@ -22,16 +27,21 @@ public class TCPConnection {
             dout.writeInt(dataLength);
             dout.write(dataToSend, 0, dataLength);
             dout.flush();
+            LOGGER.info("[TCPSender_sendData] data sent ");
         }
     }
 
-    public static class TCPReceiverThread extends Thread{
+    public static class TCPReceiverThread implements Runnable{
         private Socket socket;
         private DataInputStream din;
+        private byte[] data;
+        private Node node;
+        static Logger LOGGER = Logger.getLogger(TCPReceiverThread.class.getName());
 
-        public TCPReceiverThread(Socket socket) throws IOException {
+        public TCPReceiverThread(Socket socket, Node node) throws IOException {
             this.socket = socket;
-            din = new DataInputStream(socket.getInputStream());
+            this.din = new DataInputStream(socket.getInputStream());
+            this.node = node;
         }
 
         @Override
@@ -40,25 +50,23 @@ public class TCPConnection {
             while (socket != null) {
                 try {
                     dataLength = din.readInt();
-                    byte[] data = new byte[dataLength];
+                    data = new byte[dataLength];
                     din.readFully(data, 0, dataLength);
 
-                    for (byte b:data) {
-                        // convert byte into character
-                        char c = (char)b;
-                        // print the character
-                        System.out.print(c);
-                    }
+                    Event event = EventFactory.getInstance().createEvent(data);
+                    LOGGER.info("[TCPReceiverThread]_[run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
+                    node.onEvent(event, socket);
 
                 } catch (SocketException se) {
-                    System.out.println(se.getMessage());
+                    LOGGER.info("[TCPReceiverThread]_[run] SocketException " + se.getMessage());
+                    se.printStackTrace();
                     break;
                 } catch (IOException ioe) {
-                    System.out.println(ioe.getMessage()) ;
+                    LOGGER.info("[TCPReceiverThread]_[run] IOException " + ioe.getMessage());
+                    ioe.printStackTrace();
                     break;
                 }
             }
         }
-
     }
 }

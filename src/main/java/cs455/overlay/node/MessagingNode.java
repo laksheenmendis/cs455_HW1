@@ -1,18 +1,16 @@
 package cs455.overlay.node;
 
+import cs455.overlay.routing.RoutingTable;
 import cs455.overlay.transport.TCPConnection;
 import cs455.overlay.transport.TCPServerThread;
-import cs455.overlay.wireformats.Event;
-import cs455.overlay.wireformats.EventFactory;
-import cs455.overlay.wireformats.OverlayNodeSendsRegistration;
-import cs455.overlay.wireformats.Protocol;
+import cs455.overlay.util.InteractiveCommandParser;
+import cs455.overlay.wireformats.*;
+import org.apache.log4j.Logger;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class MessagingNode implements Node {
+public class MessagingNode implements Node, Runnable {
 
     private Socket socket;
     private static EventFactory eventFactory;
@@ -21,6 +19,13 @@ public class MessagingNode implements Node {
     private int relayTracker = 0;       //number of packets that a node relays
     private long sendSummation = 0L;    //sums the values of the random numbers that are sent
     private long receiveSummation = 0L; //sums values of the payloads that are received
+    private RoutingTable routingTable;
+    private int port;
+    private TCPServerThread serverThread;
+    static Logger LOGGER = Logger.getLogger(MessagingNode.class.getName());
+    private int ID; //assigned ID by Registry
+    private Thread serverT;
+//    private static MessagingNode messagingNode;
 
     public static void main(String[] args) {
 
@@ -33,69 +38,137 @@ public class MessagingNode implements Node {
 
             MessagingNode messagingNode = new MessagingNode();
             messagingNode.socket = new Socket(REGISTRY_HOST, REGITRY_PORT);
+            LOGGER.info("[MessagingNode_main] connected to Registry");
 
             eventFactory = EventFactory.getInstance();
 
-            TCPServerThread serverThread = new TCPServerThread();
-            ServerSocket ss = serverThread.getServerSocket();
+            try {
+                messagingNode.serverThread = new TCPServerThread(-1, messagingNode);
 
-            // TODO generate registration event
-//            Event registerEvent = messagingNode.register(ss.getLocalPort());
+                messagingNode.serverT = new Thread(messagingNode.serverThread);
+                messagingNode.serverT.start();
 
-            String s = "Hello from Messaging Node";
+                InteractiveCommandParser cmdParser = new InteractiveCommandParser(messagingNode);
+                Thread cmdThread = new Thread(cmdParser);
+                cmdThread.start();
 
-            TCPConnection.TCPSender sender = new TCPConnection.TCPSender(messagingNode.socket);
-            sender.sendData(s.getBytes());
+                try
+                {
+                    Event registerEvent = messagingNode.getRegisterEvent();
+                    TCPConnection.TCPSender senderToRegistry = new TCPConnection.TCPSender(messagingNode.socket);
+                    senderToRegistry.sendData(registerEvent.getBytes());
+                    LOGGER.info("[MessagingNode_main] Registration Request sent");
 
-            messagingNode.socket.close();
-
+                    TCPConnection.TCPReceiverThread receiverFromRegistry = new TCPConnection.TCPReceiverThread(messagingNode.socket, messagingNode);
+                    Thread registryReceiver = new Thread(receiverFromRegistry);
+                    registryReceiver.start();
+                }
+                catch (UnknownHostException eh)
+                {
+                    LOGGER.info("[MessagingNode_main] Registration Failed " + eh.getMessage());
+                    eh.printStackTrace();
+                    messagingNode.serverT.stop();
+                }
+            }
+            catch (IOException e1)
+            {
+                LOGGER.info("[main] Server not started " + e1.getMessage());
+                e1.printStackTrace();
+            }
         } catch (IOException e) {
+            LOGGER.info("[main] couldn't connect to Registry " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void run() {
+
 
     }
 
     @Override
-    public void onEvent(Event event) {
+    public void onEvent(Event event, Socket socket) throws IOException  {
 
-        switch (event.getType()){
+        char messageType = event.getType();
+
+        switch (messageType){
             case Protocol.REGISTRY_REPORTS_REGISTRATION_STATUS:
-                //TODO
+                readRegisterResponse((RegistryReportsRegistrationStatus)event);
                 break;
             case Protocol.REGISTRY_REPORTS_DEREGISTRATION_STATUS:
-                //TODO
+                readDeRegisterResponse((RegistryReportsDeregistrationStatus)event);
                 break;
             case Protocol.REGISTRY_SENDS_NODE_MANIFEST:
-                //TODO
+                readNodeManifestFromRegistry((RegistrySendsNodeManifest)event);
                 break;
             case Protocol.REGISTRY_REQUESTS_TASK_INITIATE:
-                //TODO
+                readTaskInitiateRequest((RegistryRequestsTaskInitiate)event);
                 break;
             case Protocol.REGISTRY_REQUESTS_TRAFFIC_SUMMARY:
-                //TODO
+                readTrafficSummaryRequest((RegistryRequestsTrafficSummary)event);
                 break;
 
+        }
+    }
+
+    private void readTrafficSummaryRequest(RegistryRequestsTrafficSummary event) {
+    }
+
+    private void readTaskInitiateRequest(RegistryRequestsTaskInitiate event) {
+    }
+
+    private void readNodeManifestFromRegistry(RegistrySendsNodeManifest event) {
+    }
+
+    private void readDeRegisterResponse(RegistryReportsDeregistrationStatus event) {
+
+        //TODO if this is successful terminate the server
+    }
+
+    private void readRegisterResponse(RegistryReportsRegistrationStatus event) {
+        int status = event.getSuccessStatus();
+        if( status != -1)
+        {
+            LOGGER.info("[MessagingNode_readRegisterResponse] Assigned ID to messaging node is " + status);
+            this.ID = status;
+        }
+        else // error in registration
+        {
+            LOGGER.info("[MessagingNode_readRegisterResponse] Registry returned -1 " +event.getInfoString());
+            try {
+                this.socket.close();
+            } catch (IOException e) {
+                LOGGER.info("[MessagingNode_readRegisterResponse] " + e.getMessage());
+                e.printStackTrace();
+                this.serverT.stop();
+            }
         }
     }
 
     /**
      * Populates the register event to be sent to the registry
-     * @param portNumber
      * @return
      */
-    private Event register(int portNumber)
+    private OverlayNodeSendsRegistration getRegisterEvent() throws UnknownHostException
     {
-        OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration)eventFactory.createEvent(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);
-        try {
-            InetAddress adr = InetAddress.getLocalHost();
-            byte ipAdress[] = adr.getAddress();
+        OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);;
 
-            e1.setIpAddress(ipAdress);
-            e1.setPortNumber(portNumber);
-
-        } catch (UnknownHostException e) {
-            System.out.println(e.getStackTrace());
-        }
+        e1.setIpAddress(this.serverThread.getServerAddress());
+        e1.setPortNumber(this.serverThread.getServerPort());
         return e1;
+    }
+
+    /**
+     * Reset counters associated with traffic
+     */
+    // TODO call once node sends OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY
+    public void resetCounters()
+    {
+        sendTracker = 0;
+        receiveTracker = 0;
+        relayTracker = 0;
+        sendSummation = 0L;
+        receiveSummation = 0L;
     }
 }
