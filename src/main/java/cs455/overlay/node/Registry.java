@@ -6,16 +6,17 @@ import cs455.overlay.transport.TCPServerThread;
 import cs455.overlay.util.Constants;
 import cs455.overlay.util.InteractiveCommandParser;
 import cs455.overlay.wireformats.*;
-
+import cs455.overlay.wireformats.RegistrySendsNodeManifest.NodeInfo;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.HashMap;
+import java.util.*;
 
 public class Registry implements Node {
 
     //this map stores details of the IP address+Port(key) and assigned ID(value) of messaging nodes
     private HashMap<String, Integer> ipIDMap;
-
+    //this map stores details of assignedID and socket details (with registry)
+    private HashMap<Integer, Socket> idSocketMap;
     private static final int ID_UPPER_LIMIT = 128;
     private static final int ID_LOWER_LIMIT = 0;
     private static EventFactory eventFactory;
@@ -24,6 +25,7 @@ public class Registry implements Node {
 
     private Registry() {
         ipIDMap = new HashMap<>();
+        idSocketMap = new HashMap<>();
     }
 
     public static void main(String[] args) {
@@ -81,7 +83,14 @@ public class Registry implements Node {
     }
 
     private void readOverlaySetupStatus(NodeReportsOverlaySetupStatus event, Socket socket) {
-
+        if( event.getSuccessStatus() == -1)
+        {
+            //TODO check what needs to be done
+        }
+        else
+        {
+            //TODO check what needs to be done
+        }
     }
 
     private void readTaskFinishedMsg(OverlayNodeReportsTaskFinished event, Socket socket) {
@@ -133,6 +142,7 @@ public class Registry implements Node {
         int serverPort = event.getPortNumber();
 
         int ID = getID(serverIPAddress, serverPort);
+        idSocketMap.put(ID, socket);
 
         try {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
@@ -140,6 +150,7 @@ public class Registry implements Node {
             sender.sendData(registrationResponse.getBytes());
         } catch (IOException e) {
             ipIDMap.remove(generateKey(serverIPAddress, serverPort));
+            idSocketMap.remove(ID);
             TCPConnectionsCache.removeEntry(socket);
             LOGGER.info("[Registry_registerMessagingNode] Couldn't communicate to Messaging Node with ID " + ID +
                     "\nHence entries removed");
@@ -186,4 +197,114 @@ public class Registry implements Node {
         return serverIPAddress + Constants.JOINING_CHARACTER + serverPort;
     }
 
+    /**
+     * This method is used to setup the overlay based on the number of routing table entries
+     * Step1 : Calculate all hop distances based on no. of routing table entries
+     * Step2 : Get all the assigned node IDs and sort
+     * Step3 : For each messaging node ID,
+     * Step3.1: find the connecting node IDs at calculated hop distances and generate NodeInfo
+     * Step3.2: send node manifest
+     * @param noOfRoutingEntries
+     */
+    public void setupOverlay(int noOfRoutingEntries) {
+
+        LOGGER.info("[Registry_setupOverlay] Setting up overlay started");
+        List<Integer> hopsList = new ArrayList<>(noOfRoutingEntries);
+
+        // calculate hop distances
+        for(int r=0; r<noOfRoutingEntries; r++)
+        {
+            hopsList.add((int)Math.pow(2,r));
+        }
+
+        Collection<Integer> nodeIDs = ipIDMap.values();     //assigned node IDs of all messaging nodes
+        List<Integer> nodeIDList = new ArrayList<>(nodeIDs);
+        Collections.sort(nodeIDList);           //sort node IDs
+
+        int noOfNodes = nodeIDList.size();
+        for(int i = 0 ; i < noOfNodes; i++ )
+        {
+            int messagingNodeID = nodeIDList.get(i);
+            NodeInfo[] nodeInfoArray = new NodeInfo[noOfRoutingEntries];
+            int count = 0;
+            for(int j : hopsList)
+            {
+                int hopNodeID;
+                if( i+j >= noOfNodes )
+                {
+                    hopNodeID = nodeIDList.get(i+j - noOfNodes);
+                }
+                else
+                {
+                    hopNodeID = nodeIDList.get(i+j);
+                }
+                nodeInfoArray[count] = createNodeInfo(hopNodeID);
+                count++;
+            }
+            sendNodeManifest(messagingNodeID, noOfRoutingEntries, nodeInfoArray, noOfNodes, nodeIDList);
+        }
+        LOGGER.info("[Registry_setupOverlay] Setting up overlay completed");
+    }
+
+    /**
+     * This method is used to populate the NodeManifest message and send to the respective messaging node
+     * @param messagingNodeID
+     * @param noOfRoutingEntries
+     * @param nodeInfoArray
+     * @param noOfNodes
+     * @param nodeIDList
+     */
+    private void sendNodeManifest(int messagingNodeID, int noOfRoutingEntries, NodeInfo[] nodeInfoArray, int noOfNodes, List<Integer> nodeIDList) {
+
+        LOGGER.info("[Registry_sendNodeManifest] Started forming Node Manifest to Node ID " + messagingNodeID);
+        RegistrySendsNodeManifest nodeManifest = (RegistrySendsNodeManifest) eventFactory.createEventByType(Protocol.REGISTRY_SENDS_NODE_MANIFEST);
+        nodeManifest.setRoutingTableSize(noOfRoutingEntries);
+        nodeManifest.setNodeInfoList(nodeInfoArray);
+        nodeManifest.setNoOfNodeIDs(noOfNodes);
+        int[] newlist = new int[noOfNodes];
+        for(int i = 0; i< noOfNodes; i++)
+        {
+            newlist[i] = nodeIDList.get(i);
+        }
+        nodeManifest.setNodeIDs(newlist);
+
+        // get socket to communicate
+        Socket socket = idSocketMap.get(messagingNodeID);
+
+        try {
+            TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
+            sender.sendData(nodeManifest.getBytes());
+        } catch (IOException e) {
+            LOGGER.info("[Registry_sendNodeManifest] Failed to send Node Manifest to Node ID " + messagingNodeID);
+            e.printStackTrace();
+        }
+        LOGGER.info("[Registry_sendNodeManifest] Node Manifest successfully sent to Node ID " + messagingNodeID);
+    }
+
+    /**
+     * Returns serverIP and serverPort information of a particular node ID
+     * @param hopNodeID
+     * @return concatenated String of serverIP and serverPort
+     */
+    private String getHopNodeInfo(int hopNodeID)
+    {
+        String ipPortString = null;
+        for(Map.Entry<String,Integer> entry : ipIDMap.entrySet())
+        {
+            if(entry.getValue() == hopNodeID)
+            {
+                ipPortString = entry.getKey();
+                break;
+            }
+        }
+        return ipPortString;
+    }
+
+    private NodeInfo createNodeInfo(int hopNodeID)
+    {
+        String ipPort = getHopNodeInfo(hopNodeID);
+        String[] arr = ipPort.split(Constants.JOINING_CHARACTER);
+        NodeInfo nodeInfo = new NodeInfo(hopNodeID, arr[0].getBytes(), Integer.parseInt(arr[1]));
+        return nodeInfo;
+    }
 }

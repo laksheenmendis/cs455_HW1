@@ -5,7 +5,7 @@ import java.util.HashMap;
 public class RoutingTable {
 
     //(key,value) -> (nodeID, routingEntry)
-    private HashMap<Integer, RoutingEntry> routingMap;
+    public static HashMap<Integer, RoutingEntry> routingMap = new HashMap<>();
 
     public RoutingTable() {
         //TODO setup the routing table here
@@ -24,7 +24,7 @@ public class RoutingTable {
      * @param destinationID
      * @return
      */
-    public RoutingEntry getForwardingRoutingNode(int destinationID)
+    public static RoutingEntry getForwardingRoutingNode(int destinationID)
     {
         int forwardingNode = -1;
         for(int nodeID : routingMap.keySet())

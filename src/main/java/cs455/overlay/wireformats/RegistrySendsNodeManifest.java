@@ -101,13 +101,20 @@ public class RegistrySendsNodeManifest implements Event {
         this.nodeIDs = nodeIDs;
     }
 
-    static class NodeInfo
+    public static class NodeInfo
     {
         private int nodeID;
         private byte[] ipAddress;
         private int portNumber;
+        private int _distance; //this is not sent in the RegistrySendsNodeManifest
 
         public NodeInfo() {
+        }
+
+        public NodeInfo(int nodeID, byte[] ipAddress, int portNumber) {
+            this.nodeID = nodeID;
+            this.ipAddress = ipAddress;
+            this.portNumber = portNumber;
         }
 
         public NodeInfo(byte [] marshalledBytes) throws IOException{
@@ -162,6 +169,14 @@ public class RegistrySendsNodeManifest implements Event {
 
         public void setPortNumber(int portNumber) {
             this.portNumber = portNumber;
+        }
+
+        public int get_distance() {
+            return _distance;
+        }
+
+        public void set_distance(int _distance) {
+            this._distance = _distance;
         }
     }
 }

@@ -1,14 +1,20 @@
 package cs455.overlay.node;
 
+import cs455.overlay.routing.RoutingEntry;
 import cs455.overlay.routing.RoutingTable;
 import cs455.overlay.transport.TCPConnection;
 import cs455.overlay.transport.TCPServerThread;
+import cs455.overlay.util.Constants;
 import cs455.overlay.util.InteractiveCommandParser;
 import cs455.overlay.wireformats.*;
 import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 public class MessagingNode implements Node, Runnable {
 
@@ -25,6 +31,9 @@ public class MessagingNode implements Node, Runnable {
     static Logger LOGGER = Logger.getLogger(MessagingNode.class.getName());
     private int ID; //assigned ID by Registry
     private Thread serverT;
+    private int [] allNodeIDs;
+    // this map is used to store connections to other messaging nodes
+    private Map<Integer, Socket> nodeSocketMap;
 //    private static MessagingNode messagingNode;
 
     public static void main(String[] args) {
@@ -69,11 +78,11 @@ public class MessagingNode implements Node, Runnable {
             }
             catch (IOException e1)
             {
-                LOGGER.info("[main] Server not started " + e1.getMessage());
+                LOGGER.info("[MessagingNode_main] Server not started " + e1.getMessage());
                 e1.printStackTrace();
             }
         } catch (IOException e) {
-            LOGGER.info("[main] couldn't connect to Registry " + e.getMessage());
+            LOGGER.info("[MessagingNode_main] couldn't connect to Registry " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -115,8 +124,115 @@ public class MessagingNode implements Node, Runnable {
     private void readTaskInitiateRequest(RegistryRequestsTaskInitiate event) {
     }
 
+    /**
+     * This includes various tasks carried out by Messaging Node when it receives RegistrySendsNodeManifest
+     * Step 1: Routing table is setup
+     * Step 2: Initiate connections with other relevant messaging nodes
+     * Step 3: Call sendOverlaySetupStatus
+     * @param event
+     */
     private void readNodeManifestFromRegistry(RegistrySendsNodeManifest event) {
+
+        LOGGER.info("[MessagingNode_readNodeManifestFromRegistry] Routing table creation started at Node : " + this.ID);
+        int noOfRoutingEntries = event.getRoutingTableSize();
+        List<Integer> hopsList = new ArrayList<>(noOfRoutingEntries);
+
+        // calculate hop distances
+        for(int r=0; r<noOfRoutingEntries; r++)
+        {
+            hopsList.add((int)Math.pow(2,r));
+        }
+
+        boolean successStatus;
+
+        StringBuilder sb = new StringBuilder("");
+        RegistrySendsNodeManifest.NodeInfo[] nodeInfos = event.getNodeInfoList();
+        for(int j=0; j< noOfRoutingEntries; j++)
+        {
+            nodeInfos[j].set_distance(hopsList.get(j));
+            RoutingEntry routingEntry = nodeInfoToRoutingEntry.apply(nodeInfos[j]);
+            successStatus = initiateConnectionWithNode(nodeInfos[j], routingEntry);
+
+            if(!successStatus)
+            {
+                sb.append(this.ID +" to " + nodeInfos[j].getNodeID() + " unsuccessfull\n");
+            }
+        }
+        LOGGER.info("[MessagingNode_readNodeManifestFromRegistry] Routing table creation finished at Node : " + this.ID);
+
+        this.allNodeIDs = event.getNodeIDs();
+
+        sendOverlaySetupStatus( sb.toString() );
+
     }
+
+    /**
+     * This message handles sending overlay setup status to the registry
+     * @param failureMsg
+     */
+    private void sendOverlaySetupStatus(String failureMsg) {
+
+        NodeReportsOverlaySetupStatus overlaySetupStatus = (NodeReportsOverlaySetupStatus) eventFactory.createEventByType(Protocol.NODE_REPORTS_OVERLAY_SETUP_STATUS);
+
+        if( failureMsg.isEmpty() )   //no failures
+        {
+            overlaySetupStatus.setSuccessStatus(this.ID);
+            overlaySetupStatus.setInfoString(Constants.SETUP_OVERLAY_SUCCESSFULL);
+        }
+        else // failures occured
+        {
+            overlaySetupStatus.setSuccessStatus(-1);
+            overlaySetupStatus.setInfoString(failureMsg);
+        }
+
+        try {
+            TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.socket);
+            sender.sendData(overlaySetupStatus.getBytes());
+            LOGGER.info("[MessagingNode_sendOverlaySetupStatus] Overlay setup status message sent from Node ID "+ this.ID);
+        } catch (IOException e) {
+            LOGGER.info("[MessagingNode_sendOverlaySetupStatus] couldn't send the overlay setup status from node ID " + this.ID + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * This method is used to create new connections with other messaging nodes
+     * as specified in Node Manifest message
+     * @param nodeInfo
+     * @param entry
+     * @return
+     */
+    private boolean initiateConnectionWithNode(RegistrySendsNodeManifest.NodeInfo nodeInfo, RoutingEntry entry) {
+
+        boolean successful = false;
+        Socket socket;
+        try {
+            socket = new Socket(new String(nodeInfo.getIpAddress()), nodeInfo.getPortNumber());
+            this.nodeSocketMap.put(nodeInfo.getNodeID(), socket);
+            RoutingTable.routingMap.put(nodeInfo.getNodeID(), entry);
+            successful = true;
+            LOGGER.info("[MessagingNode_initiateConnectionWithNode] Messaging Node " + this.ID + " connected to Node "+ nodeInfo.getNodeID());
+        } catch (Exception e) {
+            LOGGER.info("[MessagingNode_initiateConnectionWithNode] Messaging Node " + this.ID + " failed to connect to Node "+ nodeInfo.getNodeID() + e.getMessage());
+            e.printStackTrace();
+        }
+        finally {
+            return successful;
+        }
+    }
+
+    /**
+     * This function is used to map information from NodeInfo from Manifest message to a routing entry
+     */
+    Function<RegistrySendsNodeManifest.NodeInfo, RoutingEntry> nodeInfoToRoutingEntry= (RegistrySendsNodeManifest.NodeInfo info)->
+    {
+        RoutingEntry routingEntry = new RoutingEntry();
+        routingEntry.setDistance(info.get_distance());
+        routingEntry.setNodeID(info.getNodeID());
+        routingEntry.setIpAddress(info.getIpAddress());
+        routingEntry.setPortNumber(info.getPortNumber());
+        return routingEntry;
+    };
 
     private void readDeRegisterResponse(RegistryReportsDeregistrationStatus event) {
         int status = event.getSuccessStatus();

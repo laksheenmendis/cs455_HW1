@@ -52,8 +52,9 @@ public class InteractiveCommandParser implements Runnable{
                 } else if (inArr[0].equals(CMD_SETUP_OVERLAY) && node instanceof Registry) {       //registry setting up the overlay
                     //sending every messaging node the REGISTRY_SENDS_NODE_MANIFEST message
 
-                    int routingTableEntries = Integer.parseInt(inArr[1]);
-
+                    int noOfRoutingEntries = Integer.parseInt(inArr[1]);
+                    Registry registry = (Registry)node;
+                    registry.setupOverlay(noOfRoutingEntries);
 
                 } else if ( inArr[0].equals(CMD_LIST_ROUTING_TABLES) && node instanceof Registry) {
                     //information about the computed routing tables for each node in the overlay. Each messaging node’s

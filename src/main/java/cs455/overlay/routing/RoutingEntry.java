@@ -7,6 +7,9 @@ public class RoutingEntry {
     private byte[] ipAddress;
     private int portNumber;
 
+    public RoutingEntry() {
+    }
+
     public int getDistance() {
         return distance;
     }
