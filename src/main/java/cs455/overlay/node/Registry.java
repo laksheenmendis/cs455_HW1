@@ -21,7 +21,7 @@ public class Registry implements Node {
     private static final int ID_LOWER_LIMIT = 0;
     private static EventFactory eventFactory;
     private TCPServerThread serverThread;
-    static org.apache.log4j.Logger LOGGER = org.apache.log4j.Logger.getLogger(Registry.class.getName());
+    private static org.apache.log4j.Logger LOGGER = org.apache.log4j.Logger.getLogger(Registry.class.getName());
 
     private Registry() {
         ipIDMap = new HashMap<>();
@@ -44,7 +44,7 @@ public class Registry implements Node {
             cmdThread.start();
 
         } catch (IOException e) {
-            LOGGER.info("Couldn't start Registry on " + PORT_NUMBER);
+            LOGGER.info("Couldn't start Registry on " + PORT_NUMBER + " " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -121,7 +121,7 @@ public class Registry implements Node {
                     ipIDMap.remove(generateKey(serverIPAddress, serverPort));
                     TCPConnectionsCache.removeEntry(socket);
                 } catch (IOException e) {
-                    LOGGER.info("[Registry_deregisterMessagingNode] Couldn't communicate to Messaging Node with ID " + event.getAssignedID());
+                    LOGGER.info("[Registry_deregisterMessagingNode] Couldn't communicate to Messaging Node with ID " + event.getAssignedID() + " " + e.getMessage());
                     e.printStackTrace();
                 }
             } catch (IOException e) {
@@ -153,7 +153,7 @@ public class Registry implements Node {
             idSocketMap.remove(ID);
             TCPConnectionsCache.removeEntry(socket);
             LOGGER.info("[Registry_registerMessagingNode] Couldn't communicate to Messaging Node with ID " + ID +
-                    "\nHence entries removed");
+                    "\nHence entries removed " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -167,8 +167,8 @@ public class Registry implements Node {
     private synchronized int getID(String serverIpAddress, int serverPort) {
         int ID;
         do {
-            int random = (int) Math.random();
-            ID = random % (ID_UPPER_LIMIT - ID_LOWER_LIMIT) + ID_LOWER_LIMIT;
+            double random = Math.random();
+            ID = (int)random % (ID_UPPER_LIMIT - ID_LOWER_LIMIT) + ID_LOWER_LIMIT;
         }
         while (ipIDMap.containsValue(ID));
 
@@ -275,7 +275,7 @@ public class Registry implements Node {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
             sender.sendData(nodeManifest.getBytes());
         } catch (IOException e) {
-            LOGGER.info("[Registry_sendNodeManifest] Failed to send Node Manifest to Node ID " + messagingNodeID);
+            LOGGER.info("[Registry_sendNodeManifest] Failed to send Node Manifest to Node ID " + messagingNodeID + " " + e.getMessage());
             e.printStackTrace();
         }
         LOGGER.info("[Registry_sendNodeManifest] Node Manifest successfully sent to Node ID " + messagingNodeID);
@@ -304,7 +304,6 @@ public class Registry implements Node {
     {
         String ipPort = getHopNodeInfo(hopNodeID);
         String[] arr = ipPort.split(Constants.JOINING_CHARACTER);
-        NodeInfo nodeInfo = new NodeInfo(hopNodeID, arr[0].getBytes(), Integer.parseInt(arr[1]));
-        return nodeInfo;
+        return new NodeInfo(hopNodeID, arr[0].getBytes(), Integer.parseInt(arr[1]));
     }
 }

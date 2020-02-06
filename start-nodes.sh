@@ -1,7 +1,7 @@
 DIR="$( cd "$( dirname "$0" )" && pwd )"
-JAR_PATH="$DIR/conf/:$DIR/build/libs/<peer-to-peer-network>.jar"
+JAR_PATH="$DIR/conf/:$DIR/build/libs/peer-to-peer-network.jar"
 MACHINE_LIST="$DIR/conf/machine_list"
-SCRIPT="java -cp $JAR_PATH cs455.overlay.node.MessagingNode <registry-host> <registry-port>"
+SCRIPT="java -cp $JAR_PATH cs455.overlay.node.MessagingNode cut-bank 12000"
 COMMAND='gnome-terminal --geometry=200x40'
 for machine in `cat $MACHINE_LIST`
 do

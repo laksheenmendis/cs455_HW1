@@ -28,7 +28,7 @@ public class MessagingNode implements Node, Runnable {
     private RoutingTable routingTable;
     private int port;
     private TCPServerThread serverThread;
-    static Logger LOGGER = Logger.getLogger(MessagingNode.class.getName());
+    private static Logger LOGGER = Logger.getLogger(MessagingNode.class.getName());
     private int ID; //assigned ID by Registry
     private Thread serverT;
     private int [] allNodeIDs;
@@ -38,10 +38,17 @@ public class MessagingNode implements Node, Runnable {
 
     public static void main(String[] args) {
 
-        String REGISTRY_HOST = "";
+        String REGISTRY_HOST;
         int REGITRY_PORT;
 
         try {
+
+            if( args.length != 2 )
+            {
+                LOGGER.info("[MessagingNode_main] 2 arguments should required, "+ args.length +"argument(s) found.");
+                return;
+            }
+
             REGISTRY_HOST = args[0];
             REGITRY_PORT = Integer.parseInt(args[1]);
 
@@ -145,7 +152,7 @@ public class MessagingNode implements Node, Runnable {
 
         boolean successStatus;
 
-        StringBuilder sb = new StringBuilder("");
+        StringBuilder sb = new StringBuilder();
         RegistrySendsNodeManifest.NodeInfo[] nodeInfos = event.getNodeInfoList();
         for(int j=0; j< noOfRoutingEntries; j++)
         {
@@ -213,7 +220,7 @@ public class MessagingNode implements Node, Runnable {
             successful = true;
             LOGGER.info("[MessagingNode_initiateConnectionWithNode] Messaging Node " + this.ID + " connected to Node "+ nodeInfo.getNodeID());
         } catch (Exception e) {
-            LOGGER.info("[MessagingNode_initiateConnectionWithNode] Messaging Node " + this.ID + " failed to connect to Node "+ nodeInfo.getNodeID() + e.getMessage());
+            LOGGER.info("[MessagingNode_initiateConnectionWithNode] Messaging Node " + this.ID + " failed to connect to Node "+ nodeInfo.getNodeID() +" "+ e.getMessage());
             e.printStackTrace();
         }
         finally {
@@ -224,7 +231,7 @@ public class MessagingNode implements Node, Runnable {
     /**
      * This function is used to map information from NodeInfo from Manifest message to a routing entry
      */
-    Function<RegistrySendsNodeManifest.NodeInfo, RoutingEntry> nodeInfoToRoutingEntry= (RegistrySendsNodeManifest.NodeInfo info)->
+    private Function<RegistrySendsNodeManifest.NodeInfo, RoutingEntry> nodeInfoToRoutingEntry= (RegistrySendsNodeManifest.NodeInfo info)->
     {
         RoutingEntry routingEntry = new RoutingEntry();
         routingEntry.setDistance(info.get_distance());
@@ -280,7 +287,7 @@ public class MessagingNode implements Node, Runnable {
      */
     private OverlayNodeSendsRegistration getRegisterEvent()
     {
-        OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);;
+        OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);
         e1.setIpAddress(this.serverThread.getServerAddress());
         e1.setPortNumber(this.serverThread.getServerPort());
         return e1;
@@ -297,7 +304,7 @@ public class MessagingNode implements Node, Runnable {
             senderToRegistry.sendData(event.getBytes());
             LOGGER.info("[MessagingNode_sendEvent] " + event.getClass().getSimpleName() +" Request sent");
         } catch (IOException e) {
-            LOGGER.info("[MessagingNode_sendEvent] " + event.getClass().getSimpleName() + " Request sending failed");
+            LOGGER.info("[MessagingNode_sendEvent] " + event.getClass().getSimpleName() + " Request sending failed " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -316,7 +323,7 @@ public class MessagingNode implements Node, Runnable {
      * Populates the deregister event to be sent to the registry
      * @return
      */
-    public OverlayNodeSendsDeregistration getDeregisterEvent()
+    private OverlayNodeSendsDeregistration getDeregisterEvent()
     {
         OverlayNodeSendsDeregistration e1 = (OverlayNodeSendsDeregistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_DEREGISTRATION);
         e1.setIpAddress(this.serverThread.getServerAddress());
@@ -329,7 +336,7 @@ public class MessagingNode implements Node, Runnable {
      * Reset counters associated with traffic
      */
     // TODO call once node sends OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY
-    public void resetCounters()
+    private void resetCounters()
     {
         sendTracker = 0;
         receiveTracker = 0;

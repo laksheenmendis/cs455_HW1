@@ -11,7 +11,7 @@ public class TCPServerThread implements Runnable {
     private ServerSocket serverSocket;
     private final int STARTING_PORT_NUMBER = 49152;
     private final int ENDING_PORT_NUMBER = 65535;
-    static Logger LOGGER = Logger.getLogger(TCPServerThread.class.getName());
+    private static Logger LOGGER = Logger.getLogger(TCPServerThread.class.getName());
     private TCPConnection.TCPSender sender;
     private Node node;
 
@@ -41,7 +41,7 @@ public class TCPServerThread implements Runnable {
                 thread.start();
 
             } catch (IOException e) {
-                LOGGER.info("[run] Unable to accept incoming connections " + e.getMessage());
+                LOGGER.info("[TCPServerThread_run] Unable to accept incoming connections " + e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -51,10 +51,10 @@ public class TCPServerThread implements Runnable {
      * Finds an available port in the range and creates a Server Socket
      * which is bound to the provided port
      *
-     * @return
-     * @throws IOException
+     * @return A new Server Socket
+     * @throws IOException When no free port is found
      */
-    public ServerSocket getServerSocket() throws IOException {
+    private ServerSocket getServerSocket() throws IOException {
         for (int port = STARTING_PORT_NUMBER; port <= ENDING_PORT_NUMBER; port++) {
             try {
                 return new ServerSocket(port);

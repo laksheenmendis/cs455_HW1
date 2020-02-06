@@ -13,14 +13,14 @@ import java.io.InputStreamReader;
  */
 public class InteractiveCommandParser implements Runnable{
 
-    public static final String CMD_LIST_MESSAGING_NODES = "list-messaging-nodes";
-    public static final String CMD_SETUP_OVERLAY = "setup-overlay";
-    public static final String CMD_START = "start";
-    public static final String CMD_PRINT_COUNTERS_AND_DIAGNOSTICS = "print-counters-and-diagnostics";
-    public static final String CMD_EXIT_OVERLAY = "exit-overlay";
-    public static final String CMD_LIST_ROUTING_TABLES = "list-routing-tables";
+    private static final String CMD_LIST_MESSAGING_NODES = "list-messaging-nodes";
+    private static final String CMD_SETUP_OVERLAY = "setup-overlay";
+    private static final String CMD_START = "start";
+    private static final String CMD_PRINT_COUNTERS_AND_DIAGNOSTICS = "print-counters-and-diagnostics";
+    private static final String CMD_EXIT_OVERLAY = "exit-overlay";
+    private static final String CMD_LIST_ROUTING_TABLES = "list-routing-tables";
     private Node node;
-    static Logger LOGGER = Logger.getLogger(InteractiveCommandParser.class.getName());
+    private static Logger LOGGER = Logger.getLogger(InteractiveCommandParser.class.getName());
 
     public InteractiveCommandParser(Node node) {
         this.node = node;
@@ -32,7 +32,7 @@ public class InteractiveCommandParser implements Runnable{
         readAndProcess();
     }
 
-    public void readAndProcess() {
+    private void readAndProcess() {
 
         InputStreamReader inputStreamReader;
         BufferedReader br;
@@ -82,7 +82,8 @@ public class InteractiveCommandParser implements Runnable{
 
 
             } catch (IOException e) {
-                System.out.print(e.getStackTrace());
+                LOGGER.info("[InteractiveCommandParser_readAndProcess] " + e.getMessage());
+                e.printStackTrace();
             }
         }
     }
