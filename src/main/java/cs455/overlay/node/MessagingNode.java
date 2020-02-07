@@ -9,14 +9,10 @@ import cs455.overlay.util.Converter;
 import cs455.overlay.util.InteractiveCommandParser;
 import cs455.overlay.wireformats.*;
 import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MessagingNode implements Node, Runnable {
 
@@ -33,10 +29,10 @@ public class MessagingNode implements Node, Runnable {
     private static Logger LOGGER = Logger.getLogger(MessagingNode.class.getName());
     private int ID; //assigned ID by Registry
     private Thread serverT;
-    private int [] allNodeIDs;
+    private int[] allNodeIDs;
     // this map is used to store connections to other messaging nodes
     private Map<Integer, Socket> nodeSocketMap;
-//    private static MessagingNode messagingNode;
+    //    private static MessagingNode messagingNode;
     private Thread registryReceiver;
 
     public static void main(String[] args) {
@@ -46,9 +42,8 @@ public class MessagingNode implements Node, Runnable {
 
         try {
 
-            if( args.length != 2 )
-            {
-                LOGGER.info("[MessagingNode_main] 2 arguments should required, "+ args.length +"argument(s) found.");
+            if (args.length != 2) {
+                LOGGER.info("[MessagingNode_main] 2 arguments should required, " + args.length + "argument(s) found.");
                 return;
             }
 
@@ -71,23 +66,19 @@ public class MessagingNode implements Node, Runnable {
                 Thread cmdThread = new Thread(cmdParser);
                 cmdThread.start();
 
-                try
-                {
+                try {
                     messagingNode.sendRegisterEvent();
 
+                    // receiver which is connected with Registry
                     TCPConnection.TCPReceiverThread receiverFromRegistry = new TCPConnection.TCPReceiverThread(messagingNode.socket, messagingNode);
                     messagingNode.registryReceiver = new Thread(receiverFromRegistry);
                     messagingNode.registryReceiver.start();
-                }
-                catch (UnknownHostException eh)
-                {
+                } catch (UnknownHostException eh) {
                     LOGGER.info("[MessagingNode_main] Registration Failed " + eh.getStackTrace());
                     eh.printStackTrace();
                     messagingNode.serverT.stop();
                 }
-            }
-            catch (IOException e1)
-            {
+            } catch (IOException e1) {
                 LOGGER.info("[MessagingNode_main] Server not started " + e1.getStackTrace());
                 e1.printStackTrace();
             }
@@ -108,18 +99,18 @@ public class MessagingNode implements Node, Runnable {
 
         char messageType = event.getType();
 
-        switch (messageType){
+        switch (messageType) {
             case Protocol.REGISTRY_REPORTS_REGISTRATION_STATUS:
-                readRegisterResponse((RegistryReportsRegistrationStatus)event);
+                readRegisterResponse((RegistryReportsRegistrationStatus) event);
                 break;
             case Protocol.REGISTRY_REPORTS_DEREGISTRATION_STATUS:
-                readDeRegisterResponse((RegistryReportsDeregistrationStatus)event);
+                readDeRegisterResponse((RegistryReportsDeregistrationStatus) event);
                 break;
             case Protocol.REGISTRY_SENDS_NODE_MANIFEST:
-                readNodeManifestFromRegistry((RegistrySendsNodeManifest)event);
+                readNodeManifestFromRegistry((RegistrySendsNodeManifest) event);
                 break;
             case Protocol.REGISTRY_REQUESTS_TASK_INITIATE:
-                taskInitiate((RegistryRequestsTaskInitiate)event);
+                taskInitiate((RegistryRequestsTaskInitiate) event);
                 break;
             case Protocol.REGISTRY_REQUESTS_TRAFFIC_SUMMARY:
                 sendTrafficSummaryResponse();
@@ -130,8 +121,19 @@ public class MessagingNode implements Node, Runnable {
         }
     }
 
-
+    /**
+     * This method checks the incoming event and decides next action
+     *  1. Whether the destination is this
+     *  2. Whether it needs to be forwarded after altering dissemination trace
+     * @param event
+     */
     private void receiveOrRelay(OverlayNodeSendsData event) {
+        if( event.getDestinationID() == this.ID )
+        {
+            this.receiveTracker += 1;
+            this.receiveSummation += event.getPayload();
+        }
+
 
     }
 
@@ -146,7 +148,7 @@ public class MessagingNode implements Node, Runnable {
         try {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.socket);
             sender.sendData(trafficSummary.getBytes());
-            LOGGER.info("[MessagingNode_readTrafficSummaryRequest] Traffic summary message sent from Node ID "+ this.ID);
+            LOGGER.info("[MessagingNode_readTrafficSummaryRequest] Traffic summary message sent from Node ID " + this.ID);
         } catch (IOException e) {
             LOGGER.info("[MessagingNode_readTrafficSummaryRequest] couldn't send traffic summary from node ID " + this.ID + e.getStackTrace());
             e.printStackTrace();
@@ -156,11 +158,67 @@ public class MessagingNode implements Node, Runnable {
     /**
      * This method will send out the required number of messages to randomly picked
      * Messaging Nodes (except itself)
+     *
      * @param event
      */
     private void taskInitiate(RegistryRequestsTaskInitiate event) {
 
-        //
+        LOGGER.info("[MessagingNode_taskInitiate] Started");
+        for( int i = 0; i < event.getNoOfMessages(); i++ )
+        {
+            int destinationID = getRandomDestinationID();
+            if( destinationID == -1 )
+            {
+                LOGGER.info("[MessagingNode_taskInitiate] Couldn't find a valid destination ID");
+            }
+            else
+            {
+                OverlayNodeSendsData nodeSendsData = (OverlayNodeSendsData) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_DATA);
+                nodeSendsData.setDestinationID(destinationID);
+                nodeSendsData.setSourceID(this.ID);
+                int payload = new Random().nextInt();
+                nodeSendsData.setPayload(payload);
+                nodeSendsData.setDisseminationTrace(new int[0]);
+
+                int forwardingNodeID = routingTable.getForwardingRoutingNode(destinationID);
+
+                try {
+                    TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.nodeSocketMap.get(forwardingNodeID));
+                    sender.sendData(nodeSendsData.getBytes());
+                    this.sendTracker += 1;
+                    this.sendSummation += payload;
+                    //TODO remove this LOGGER line before submitting
+                    LOGGER.info("[MessagingNode_taskInitiate] Sending data from " + this.ID + " successfull " );
+                } catch (IOException e) {
+                    LOGGER.info("[MessagingNode_taskInitiate] Sending data from " + this.ID + " failed " + e.getStackTrace());
+                    e.printStackTrace();
+                }
+            }
+        }
+        LOGGER.info("[MessagingNode_taskInitiate] Node " + this.ID + " sent " + this.sendTracker + " messages");
+
+    }
+
+    /**
+     * This method should pick a random ID (except itself)
+     * @return randomly picked destination ID
+     */
+    private int getRandomDestinationID(){
+
+        if( this.allNodeIDs.length > 0 )
+        {
+            int randomIndex ;
+            do{
+                Random generator = new Random();
+                randomIndex = generator.nextInt(this.allNodeIDs.length);
+            }
+            while (this.allNodeIDs[randomIndex] == this.ID);
+            return this.allNodeIDs[randomIndex];
+        }
+        else
+        {
+            return -1;
+        }
 
     }
 
@@ -334,8 +392,9 @@ public class MessagingNode implements Node, Runnable {
     private OverlayNodeSendsRegistration getRegisterEvent()
     {
         OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);
-        e1.setIpAddress(this.serverThread.getServerAddress());
+        e1.setIpAddress(this.socket.getInetAddress().getAddress());
         e1.setPortNumber(this.serverThread.getServerPort());
+        System.out.println("Register server address " + generateIPAddress(e1.getIpAddress()) + " and port " + e1.getPortNumber());
         return e1;
     }
 
@@ -372,7 +431,7 @@ public class MessagingNode implements Node, Runnable {
     private OverlayNodeSendsDeregistration getDeregisterEvent()
     {
         OverlayNodeSendsDeregistration e1 = (OverlayNodeSendsDeregistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_DEREGISTRATION);
-        e1.setIpAddress(this.serverThread.getServerAddress());
+        e1.setIpAddress(this.socket.getInetAddress().getAddress());
         e1.setAssignedID(this.ID);
         e1.setPortNumber(this.serverThread.getServerPort());
         return e1;

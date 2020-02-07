@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class TCPServerThread implements Runnable {
 
@@ -31,11 +32,13 @@ public class TCPServerThread implements Runnable {
         while (true) {
 
             try {
+                // incoming connections from other Messaging Nodes in the overlay
                 Socket socket = serverSocket.accept();
 
                 //save the connection details
                 TCPConnectionsCache.add(socket);
 
+                // there will be receiverThreads equal to the number of routingTable Entries
                 TCPConnection.TCPReceiverThread receiver = new TCPConnection.TCPReceiverThread(socket, this.node);
                 Thread thread = new Thread(receiver);
                 thread.start();

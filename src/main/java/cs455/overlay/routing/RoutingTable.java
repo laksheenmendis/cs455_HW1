@@ -24,7 +24,7 @@ public class RoutingTable {
      * @param destinationID
      * @return
      */
-    public static RoutingEntry getForwardingRoutingNode(int destinationID)
+    public static int getForwardingRoutingNode(int destinationID)
     {
         int forwardingNode = -1;
         for(int nodeID : routingMap.keySet())
@@ -34,6 +34,6 @@ public class RoutingTable {
                 forwardingNode = nodeID;
             }
         }
-        return routingMap.get(forwardingNode);
+        return routingMap.get(forwardingNode).getNodeID();
     }
 }

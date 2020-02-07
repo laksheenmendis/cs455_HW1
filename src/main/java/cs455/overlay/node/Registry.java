@@ -138,7 +138,7 @@ public class Registry implements Node {
 
         LOGGER.info("[Registry_registerMessagingNode] started ");
 
-        String serverIPAddress = new String(event.getIpAddress());
+        String serverIPAddress = generateIPAddress(event.getIpAddress());
         int serverPort = event.getPortNumber();
 
         int ID = getID(serverIPAddress, serverPort);
@@ -156,6 +156,16 @@ public class Registry implements Node {
                     "\nHence entries removed " + e.getStackTrace());
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Generates the String IP Address using the byte array
+     * @param arr
+     * @return
+     */
+    private String generateIPAddress(byte[] arr)
+    {
+        return arr[0] + "." + arr[1] + "." + arr[2] + "." + arr[3];
     }
 
     /**
@@ -230,6 +240,10 @@ public class Registry implements Node {
             for (int j : hopsList) {
                 int hopNodeID;
                 if (i + j >= noOfNodes) {
+                    System.out.println("Trying to get element " + (i + j - noOfNodes));
+                    System.out.println("i is "+ i);
+                    System.out.println("j is "+ j);
+                    System.out.println("No of nodes is "+ noOfNodes);
                     hopNodeID = nodeIDList.get(i + j - noOfNodes);
                 } else {
                     hopNodeID = nodeIDList.get(i + j);
@@ -307,6 +321,10 @@ public class Registry implements Node {
         return new NodeInfo(hopNodeID, arr[0].getBytes(), Integer.parseInt(arr[1]));
     }
 
+    /**
+     * Generates RegistryRequestsTaskInitiate message and sends out to all registered Messaging Nodes
+     * @param noOfMessages
+     */
     public void initiateTasks(int noOfMessages) {
 
         RegistryRequestsTaskInitiate taskInitiate = (RegistryRequestsTaskInitiate) eventFactory.createEventByType(Protocol.REGISTRY_REQUESTS_TASK_INITIATE);
