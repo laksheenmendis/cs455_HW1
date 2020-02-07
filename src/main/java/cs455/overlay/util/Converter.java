@@ -1,6 +1,10 @@
 package cs455.overlay.util;
 
+import cs455.overlay.routing.RoutingEntry;
+import cs455.overlay.wireformats.RegistrySendsNodeManifest;
+
 import java.io.*;
+import java.util.function.Function;
 
 public class Converter {
 
@@ -30,4 +34,17 @@ public class Converter {
         baInputStream.close();
         return arr;
     }
+
+    /**
+     * This function is used to map information from NodeInfo from Manifest message to a routing entry
+     */
+    public static Function<RegistrySendsNodeManifest.NodeInfo, RoutingEntry> nodeInfoToRoutingEntry= (RegistrySendsNodeManifest.NodeInfo info)->
+    {
+        RoutingEntry routingEntry = new RoutingEntry();
+        routingEntry.setDistance(info.get_distance());
+        routingEntry.setNodeID(info.getNodeID());
+        routingEntry.setIpAddress(info.getIpAddress());
+        routingEntry.setPortNumber(info.getPortNumber());
+        return routingEntry;
+    };
 }

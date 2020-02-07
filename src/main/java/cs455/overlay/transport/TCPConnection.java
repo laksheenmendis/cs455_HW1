@@ -53,16 +53,18 @@ public class TCPConnection {
                     data = new byte[dataLength];
                     din.readFully(data, 0, dataLength);
 
+                    System.out.println("Message received");
+
                     Event event = EventFactory.getInstance().createEvent(data);
-                    LOGGER.info("[TCPReceiverThread]_[run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
+                    LOGGER.info("[TCPReceiverThread_run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
                     node.onEvent(event, socket);
 
                 } catch (SocketException se) {
-                    LOGGER.info("[TCPReceiverThread]_[run] SocketException " + se.getMessage());
+                    LOGGER.info("[TCPReceiverThread_run] SocketException at " + node.getClass().getSimpleName() + se.getStackTrace());
                     se.printStackTrace();
                     break;
                 } catch (IOException ioe) {
-                    LOGGER.info("[TCPReceiverThread]_[run] IOException " + ioe.getMessage());
+                    LOGGER.info("[TCPReceiverThread_run] IOException " +  node.getClass().getSimpleName() + ioe.getStackTrace());
                     ioe.printStackTrace();
                     break;
                 }

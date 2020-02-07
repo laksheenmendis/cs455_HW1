@@ -178,5 +178,10 @@ public class RegistrySendsNodeManifest implements Event {
         public void set_distance(int _distance) {
             this._distance = _distance;
         }
+
+        public String getIPAddress()
+        {
+            return ipAddress[0] + "." + ipAddress[1] + "." + ipAddress[2] + "." + ipAddress[3];
+        }
     }
 }

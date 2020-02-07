@@ -64,6 +64,8 @@ public class InteractiveCommandParser implements Runnable{
                     //results in the registry sending the REGISTRY_REQUESTS_TASK_INITIATE to all
                     //nodes within the overlay
                     int noOfMessages = Integer.parseInt(inArr[1]);
+                    Registry registry = (Registry)node;
+                    registry.initiateTasks(noOfMessages);
                 }
                 // Messaging Node commands
                 else if ( inArr[0].equals(CMD_PRINT_COUNTERS_AND_DIAGNOSTICS) && node instanceof MessagingNode) {
