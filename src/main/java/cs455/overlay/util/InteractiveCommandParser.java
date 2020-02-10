@@ -49,6 +49,8 @@ public class InteractiveCommandParser implements Runnable{
                 if ( inArr[0].equals(CMD_LIST_MESSAGING_NODES) && node instanceof Registry) {
                     //information about the messaging nodes (hostname, port-number, and node ID) being listed.
                     // Information for each messaging node should be listed on a separate line
+                    Registry registry = (Registry) node;
+                    registry.listMessagingNode();
                 } else if (inArr[0].equals(CMD_SETUP_OVERLAY) && node instanceof Registry) {       //registry setting up the overlay
                     //sending every messaging node the REGISTRY_SENDS_NODE_MANIFEST message
 
@@ -60,6 +62,8 @@ public class InteractiveCommandParser implements Runnable{
                     //information about the computed routing tables for each node in the overlay. Each messaging node’s
                     // information should be well separated (i.e., have 3-4 blank lines between node listings) and should
                     // include the node’s IP address, portnum, and logical-ID
+                    Registry registry = (Registry) node;
+                    registry.listRoutingTables();
                 } else if ( inArr[0].equals(CMD_START) && node instanceof Registry) {
                     //results in the registry sending the REGISTRY_REQUESTS_TASK_INITIATE to all
                     //nodes within the overlay
@@ -71,6 +75,8 @@ public class InteractiveCommandParser implements Runnable{
                 else if ( inArr[0].equals(CMD_PRINT_COUNTERS_AND_DIAGNOSTICS) && node instanceof MessagingNode) {
                     //information (to the console using System.out) about the number of messages that have been sent,
                     // received, and relayed along with the sums for the messages that have been sent from and received at the node
+                    MessagingNode messagingNode = (MessagingNode) node;
+                    messagingNode.printCountersAndDiagnostics();
                 } else if ( inArr[0].equals(CMD_EXIT_OVERLAY) && node instanceof MessagingNode) {
                     //allows a messaging node to exit the overlay. The messaging node should first send a deregistration message
                     //to the registry and await a response before exiting and terminating the process

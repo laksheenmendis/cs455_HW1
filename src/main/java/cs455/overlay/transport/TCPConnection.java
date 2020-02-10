@@ -53,9 +53,9 @@ public class TCPConnection {
                     data = new byte[dataLength];
                     din.readFully(data, 0, dataLength);
 
-                    System.out.println("Message received");
-
                     Event event = EventFactory.getInstance().createEvent(data);
+                    System.out.println(event.getClass().getSimpleName() + " Message received");
+
                     LOGGER.info("[TCPReceiverThread_run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
                     node.onEvent(event, socket);
 
