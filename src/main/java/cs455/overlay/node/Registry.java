@@ -5,6 +5,8 @@ import cs455.overlay.transport.TCPConnectionsCache;
 import cs455.overlay.transport.TCPServerThread;
 import cs455.overlay.util.Constants;
 import cs455.overlay.util.InteractiveCommandParser;
+import cs455.overlay.util.StatisticsCollectorAndDisplay;
+import cs455.overlay.util.TrafficSummaryTracker;
 import cs455.overlay.wireformats.*;
 import cs455.overlay.wireformats.RegistrySendsNodeManifest.NodeInfo;
 
@@ -12,7 +14,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
 
-public class Registry implements Node {
+import static java.lang.Thread.sleep;
+
+public class Registry implements Node, Runnable {
 
     //this map stores details of the IP address+Port(key) and assigned ID(value) of messaging nodes
     private HashMap<String, Integer> ipIDMap;
@@ -24,10 +28,13 @@ public class Registry implements Node {
     private TCPServerThread serverThread;
     private static org.apache.log4j.Logger LOGGER = org.apache.log4j.Logger.getLogger(Registry.class.getName());
     private TreeMap<Integer, NodeInfo[]> routingEntryTreeMap;
+    private int taskFinishedReportCount = 0;
+    private List<OverlayNodeReportsTrafficSummary> trafficSummaries;
 
     private Registry() {
         ipIDMap = new HashMap<>();
         idSocketMap = new HashMap<>();
+        trafficSummaries = new ArrayList<>();
     }
 
     public static void main(String[] args) {
@@ -55,7 +62,7 @@ public class Registry implements Node {
     @Override
     public void onEvent(Event event, Socket socket) {
 
-        char messageType = event.getType();
+        int messageType = event.getType();
         LOGGER.info("[Registry_onEvent] received " + messageType);
 
         switch (messageType) {
@@ -75,13 +82,46 @@ public class Registry implements Node {
             case Protocol.OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY:
                 readOverlayTrafficSummary((OverlayNodeReportsTrafficSummary) event, socket);
                 break;
-            //TODO overlay node send data
-
         }
     }
 
-    private void readOverlayTrafficSummary(OverlayNodeReportsTrafficSummary event, Socket socket) {
+    @Override
+    public void run() { //use this to trigger REGISTER_REQUESTS_TRAFFIC_SUMMARY message
+            //may be start this thread once finishing TASK-initiate message
+        while( ipIDMap.size() != taskFinishedReportCount )
+        {
+            try {
+                sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
 
+        LOGGER.info("[Registry_run] Nodes finished reporting task summaries");
+        RegistryRequestsTrafficSummary trafficSummaryReq = (RegistryRequestsTrafficSummary) eventFactory.createEventByType(Protocol.REGISTRY_REQUESTS_TRAFFIC_SUMMARY);
+
+        // send to all existing messages
+        for(Map.Entry<Integer, Socket> entry : idSocketMap.entrySet())
+        {
+            try {
+                TCPConnection.TCPSender sender = new TCPConnection.TCPSender(entry.getValue());
+                sender.sendData(trafficSummaryReq.getBytes());
+                LOGGER.info("[Registry_run] Traffic summary request successfully sent to Node ID " + entry.getKey());
+            } catch (IOException e) {
+                LOGGER.info("[Registry_run] Failed to send Traffic summary request to Node ID " + entry.getKey() + " " + e.getStackTrace());
+                e.printStackTrace();
+            }
+        }
+
+        // Start a thread to track traffic summary responses and then generate the output on console
+        TrafficSummaryTracker trafficSummaryTracker = new TrafficSummaryTracker(this);
+        Thread summaryTrackerThread = new Thread(trafficSummaryTracker);
+        summaryTrackerThread.start();
+    }
+
+    private synchronized void readOverlayTrafficSummary(OverlayNodeReportsTrafficSummary event, Socket socket) {
+        trafficSummaries.add(event);
+        LOGGER.info("[Registry_readOverlayTrafficSummary] Traffic Summary received from Node "+ event.getAssignedNodeID());
     }
 
     private void readOverlaySetupStatus(NodeReportsOverlaySetupStatus event, Socket socket) {
@@ -93,7 +133,22 @@ public class Registry implements Node {
     }
 
     private void readTaskFinishedMsg(OverlayNodeReportsTaskFinished event, Socket socket) {
+        //check validity
+        // TODO check this
+        if ( idSocketMap.get(event.getNodeID()).equals(socket) )
+        {
+            updateTaskFinishedCount();
+        }
+        else
+        {
+            LOGGER.info("[Registry_readTaskFinishedMsg] "+ event.getClass().getSimpleName() + " message is not from a valid Messaging Node");
+        }
+    }
 
+    private synchronized void updateTaskFinishedCount()
+    {
+        LOGGER.info("[Registry_updateTaskFinishedCount] count updated");
+        taskFinishedReportCount++;
     }
 
     private void deregisterMessagingNode(OverlayNodeSendsDeregistration event, Socket socket) {
@@ -240,15 +295,15 @@ public class Registry implements Node {
             for (int j : hopsList) {
                 int hopNodeID;
                 if (i + j >= noOfNodes) {
-                    System.out.println("Trying to get element " + (i + j - noOfNodes));
-                    System.out.println("i is "+ i);
-                    System.out.println("j is "+ j);
-                    System.out.println("No of nodes is "+ noOfNodes);
+//                    System.out.println("Trying to get element " + (i + j - noOfNodes));
+//                    System.out.println("i is "+ i);
+//                    System.out.println("j is "+ j);
+//                    System.out.println("No of nodes is "+ noOfNodes);
                     hopNodeID = nodeIDList.get(i + j - noOfNodes);
                 } else {
                     hopNodeID = nodeIDList.get(i + j);
                 }
-                nodeInfoArray[count] = createNodeInfo(hopNodeID);
+                nodeInfoArray[count] = createNodeInfo(hopNodeID, j);
                 count++;
             }
             boolean successfullySent = sendNodeManifest(messagingNodeID, noOfRoutingEntries, nodeInfoArray, noOfNodes, nodeIDList);
@@ -315,10 +370,10 @@ public class Registry implements Node {
         return ipPortString;
     }
 
-    private NodeInfo createNodeInfo(int hopNodeID) {
-        String ipPort = getHopNodeInfo(hopNodeID);
-        String[] arr = ipPort.split(Constants.JOINING_CHARACTER);
-        return new NodeInfo(hopNodeID, arr[0].getBytes(), Integer.parseInt(arr[1]));
+    private NodeInfo createNodeInfo(int hopNodeID, int distance) {
+        String ipAndPort = getHopNodeInfo(hopNodeID);
+        String[] arr = ipAndPort.split(Constants.JOINING_CHARACTER);
+        return new NodeInfo(hopNodeID, arr[0].getBytes(), Integer.parseInt(arr[1]), distance);
     }
 
     /**
@@ -342,5 +397,38 @@ public class Registry implements Node {
                 e.printStackTrace();
             }
         }
+
+        // once sending task initiate is completed, a thread is started to keep track of
+        // OVERLAY_NODE_REPORTS_TASK_FINISHED messages, inorder to send out REGISTRY_REQUESTS_TRAFFIC_SUMMARY
+        // to all the messaging nodes, once all of them finishes reporting
+        Thread taskFinishedMsgThread = new Thread(this);
+        taskFinishedMsgThread.start();
+    }
+
+    // List downs information about each messaging node
+    public void listMessagingNode() {
+
+        StatisticsCollectorAndDisplay.printMessagingNodeLise(ipIDMap.entrySet());
+    }
+
+    public void listRoutingTables() {
+
+        StatisticsCollectorAndDisplay.printRoutingTables(routingEntryTreeMap);
+    }
+
+    public HashMap<String, Integer> getIpIDMap() {
+        return ipIDMap;
+    }
+
+    public void setIpIDMap(HashMap<String, Integer> ipIDMap) {
+        this.ipIDMap = ipIDMap;
+    }
+
+    public List<OverlayNodeReportsTrafficSummary> getTrafficSummaries() {
+        return trafficSummaries;
+    }
+
+    public void setTrafficSummaries(List<OverlayNodeReportsTrafficSummary> trafficSummaries) {
+        this.trafficSummaries = trafficSummaries;
     }
 }

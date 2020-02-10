@@ -4,7 +4,7 @@ import java.io.*;
 
 public class RegistryRequestsTaskInitiate implements Event {
 
-    private char messageType;
+    private int messageType;
     private int noOfMessages;
 
     public RegistryRequestsTaskInitiate() {
@@ -15,14 +15,14 @@ public class RegistryRequestsTaskInitiate implements Event {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         noOfMessages = din.readInt();
         baInputStream.close();
         din.close();
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.REGISTRY_REQUESTS_TASK_INITIATE;
     }
 
@@ -31,7 +31,7 @@ public class RegistryRequestsTaskInitiate implements Event {
         byte [] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar(messageType);
+        dout.writeInt(messageType);
         dout.writeInt(noOfMessages);
         dout.flush();
         marshalledBytes = baOutputStream.toByteArray();

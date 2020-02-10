@@ -5,7 +5,7 @@ import java.io.*;
 
 public class OverlayNodeSendsData implements Event {
 
-    private char messageType;
+    private int messageType;
     private int destinationID;
     private int sourceID;
     private int payload;
@@ -18,7 +18,7 @@ public class OverlayNodeSendsData implements Event {
     public OverlayNodeSendsData(byte [] marshalledBytes) throws IOException{
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         this.destinationID = din.readInt();
         this.sourceID = din.readInt();
         this.payload = din.readInt();
@@ -32,7 +32,7 @@ public class OverlayNodeSendsData implements Event {
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.OVERLAY_NODE_SENDS_DATA;
     }
 
@@ -41,7 +41,7 @@ public class OverlayNodeSendsData implements Event {
         byte [] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar(messageType);
+        dout.writeInt(messageType);
         dout.writeInt(destinationID);
         dout.writeInt(sourceID);
         dout.writeInt(payload);

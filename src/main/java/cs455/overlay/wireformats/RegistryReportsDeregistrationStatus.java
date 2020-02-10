@@ -4,7 +4,7 @@ import java.io.*;
 
 public class RegistryReportsDeregistrationStatus implements Event {
 
-    private char messageType;
+    private int messageType;
     private int successStatus; //assigned ID if successful, otherwise -1
     private String infoString;
 
@@ -16,7 +16,7 @@ public class RegistryReportsDeregistrationStatus implements Event {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         this.successStatus = din.readInt();
         int lengthOfInfo = din.readInt();
         byte [] infoStringBytes = new byte[lengthOfInfo];
@@ -27,7 +27,7 @@ public class RegistryReportsDeregistrationStatus implements Event {
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.REGISTRY_REPORTS_DEREGISTRATION_STATUS;
     }
 
@@ -36,7 +36,7 @@ public class RegistryReportsDeregistrationStatus implements Event {
         byte[] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar( messageType );
+        dout.writeInt( messageType );
         dout.writeInt( successStatus );
         byte[] infoStringBytes = infoString.getBytes();
         int infoLength = infoStringBytes.length;

@@ -10,17 +10,18 @@ public final class Protocol {
         //restrict instantiation
     }
 
-    public static final char OVERLAY_NODE_SENDS_REGISTRATION = 'a';
-    public static final char REGISTRY_REPORTS_REGISTRATION_STATUS = 'b';
-    public static final char OVERLAY_NODE_SENDS_DEREGISTRATION = 'c';
-    public static final char REGISTRY_REPORTS_DEREGISTRATION_STATUS = 'd';
-    public static final char REGISTRY_SENDS_NODE_MANIFEST = 'e';
-    public static final char NODE_REPORTS_OVERLAY_SETUP_STATUS = 'f';
-    public static final char REGISTRY_REQUESTS_TASK_INITIATE = 'g';
-    public static final char OVERLAY_NODE_REPORTS_TASK_FINISHED = 'h';
-    public static final char REGISTRY_REQUESTS_TRAFFIC_SUMMARY = 'i';
-    public static final char OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY = 'j';
-    public static final char OVERLAY_NODE_SENDS_DATA = 'k';
+    public static final int OVERLAY_NODE_SENDS_REGISTRATION = 2;
+    public static final int REGISTRY_REPORTS_REGISTRATION_STATUS = 3;
+    public static final int OVERLAY_NODE_SENDS_DEREGISTRATION = 4;
+    public static final int REGISTRY_REPORTS_DEREGISTRATION_STATUS = 5;
+    public static final int REGISTRY_SENDS_NODE_MANIFEST = 6;
+    public static final int NODE_REPORTS_OVERLAY_SETUP_STATUS = 7;
+    public static final int REGISTRY_REQUESTS_TASK_INITIATE = 8;
+    public static final int OVERLAY_NODE_SENDS_DATA = 9;
+    public static final int OVERLAY_NODE_REPORTS_TASK_FINISHED = 10;
+    public static final int REGISTRY_REQUESTS_TRAFFIC_SUMMARY = 11;
+    public static final int OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY = 12;
+
 
 
 }

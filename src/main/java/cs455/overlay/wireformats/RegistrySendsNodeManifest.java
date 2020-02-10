@@ -5,7 +5,7 @@ import java.io.*;
 
 public class RegistrySendsNodeManifest implements Event {
 
-    private char messageType;
+    private int messageType;
     private int routingTableSize;
     private NodeInfo[] nodeInfoList;
     private int noOfNodeIDs;
@@ -20,7 +20,7 @@ public class RegistrySendsNodeManifest implements Event {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         this.routingTableSize = din.readInt();
         this.nodeInfoList = new NodeInfo[routingTableSize];
         for(int i = 0; i < routingTableSize; ++i)
@@ -40,7 +40,7 @@ public class RegistrySendsNodeManifest implements Event {
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.REGISTRY_SENDS_NODE_MANIFEST;
     }
 
@@ -49,7 +49,7 @@ public class RegistrySendsNodeManifest implements Event {
         byte [] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar(messageType);
+        dout.writeInt(messageType);
         dout.writeInt(routingTableSize);
         for(int i = 0; i<routingTableSize; ++i)
         {
@@ -115,6 +115,13 @@ public class RegistrySendsNodeManifest implements Event {
             this.nodeID = nodeID;
             this.ipAddress = ipAddress;
             this.portNumber = portNumber;
+        }
+
+        public NodeInfo(int nodeID, byte[] ipAddress, int portNumber, int _distance) {
+            this.nodeID = nodeID;
+            this.ipAddress = ipAddress;
+            this.portNumber = portNumber;
+            this._distance = _distance;
         }
 
         public NodeInfo(byte [] marshalledBytes) throws IOException{

@@ -7,6 +7,7 @@ import cs455.overlay.transport.TCPServerThread;
 import cs455.overlay.util.Constants;
 import cs455.overlay.util.Converter;
 import cs455.overlay.util.InteractiveCommandParser;
+import cs455.overlay.util.StatisticsCollectorAndDisplay;
 import cs455.overlay.wireformats.*;
 import org.apache.log4j.Logger;
 import java.io.IOException;
@@ -97,7 +98,7 @@ public class MessagingNode implements Node, Runnable {
     @Override
     public void onEvent(Event event, Socket socket) {
 
-        char messageType = event.getType();
+        int messageType = event.getType();
 
         switch (messageType) {
             case Protocol.REGISTRY_REPORTS_REGISTRATION_STATUS:
@@ -123,18 +124,58 @@ public class MessagingNode implements Node, Runnable {
 
     /**
      * This method checks the incoming event and decides next action
-     *  1. Whether the destination is this
-     *  2. Whether it needs to be forwarded after altering dissemination trace
+     *  1. Checks whether the destination is this
+     *  2. If not it needs to be forwarded after altering dissemination trace
      * @param event
      */
     private void receiveOrRelay(OverlayNodeSendsData event) {
+        LOGGER.info("[MessagingNode_receiveOrRelay] Started");
         if( event.getDestinationID() == this.ID )
         {
-            this.receiveTracker += 1;
-            this.receiveSummation += event.getPayload();
+            this.updateReceiveTrackers(event.getPayload());
+            //TODO remove this message
+            System.out.println("[MessagingNode_receiveOrRelay] Node "+ this.ID + " received message");
         }
+        else
+        {
+            int [] arr = event.getDisseminationTrace();
+            int [] arrNew = new int[arr.length + 1];
 
+            arrNew = Arrays.copyOf(arr, arrNew.length);
+            arrNew[arrNew.length-1] = this.ID;
+            event.setDisseminationTrace(arrNew);
+            LOGGER.info("[MessagingNode_receiveOrRelay] Dissemination Trace is "+ arr);
 
+            this.updateRelayTracker(event);
+
+            int forwardingID = RoutingTable.getForwardingRoutingNode(event.getDestinationID());
+
+            Socket socket = this.nodeSocketMap.get(forwardingID);
+            if(socket != null)
+            {
+                try {
+                    TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
+                    sender.sendData(event.getBytes());
+                    //TODO remove this log message later
+                    System.out.println("[MessagingNode_receiveOrRelay] Node "+ this.ID + " relayed message");
+                } catch (IOException e) {
+                    //TODO change to logger
+                    System.out.println("[MessagingNode_receiveOrRelay] Node "+ this.ID + " failed to relay message");
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private synchronized void updateReceiveTrackers(int receivedPayload)
+    {
+        this.receiveTracker += 1;
+        this.receiveSummation += receivedPayload;
+    }
+
+    private synchronized void updateRelayTracker(OverlayNodeSendsData event)
+    {
+        this.relayTracker += 1;
     }
 
     /**
@@ -149,6 +190,8 @@ public class MessagingNode implements Node, Runnable {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.socket);
             sender.sendData(trafficSummary.getBytes());
             LOGGER.info("[MessagingNode_readTrafficSummaryRequest] Traffic summary message sent from Node ID " + this.ID);
+
+            this.resetCounters(); //after successful sending, we need to reset the counters
         } catch (IOException e) {
             LOGGER.info("[MessagingNode_readTrafficSummaryRequest] couldn't send traffic summary from node ID " + this.ID + e.getStackTrace());
             e.printStackTrace();
@@ -163,7 +206,7 @@ public class MessagingNode implements Node, Runnable {
      */
     private void taskInitiate(RegistryRequestsTaskInitiate event) {
 
-        LOGGER.info("[MessagingNode_taskInitiate] Started");
+        LOGGER.info("[MessagingNode_taskInitiate] Started at Node " + this.ID);
         for( int i = 0; i < event.getNoOfMessages(); i++ )
         {
             int destinationID = getRandomDestinationID();
@@ -182,21 +225,36 @@ public class MessagingNode implements Node, Runnable {
 
                 int forwardingNodeID = routingTable.getForwardingRoutingNode(destinationID);
 
+                //TODO check whether the value retrieved from the map is not null
                 try {
                     TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.nodeSocketMap.get(forwardingNodeID));
                     sender.sendData(nodeSendsData.getBytes());
                     this.sendTracker += 1;
                     this.sendSummation += payload;
                     //TODO remove this LOGGER line before submitting
-                    LOGGER.info("[MessagingNode_taskInitiate] Sending data from " + this.ID + " successfull " );
+                    System.out.println("[MessagingNode_taskInitiate] Sending data from " + this.ID + " successfull " );
                 } catch (IOException e) {
                     LOGGER.info("[MessagingNode_taskInitiate] Sending data from " + this.ID + " failed " + e.getStackTrace());
                     e.printStackTrace();
                 }
             }
         }
-        LOGGER.info("[MessagingNode_taskInitiate] Node " + this.ID + " sent " + this.sendTracker + " messages");
+        LOGGER.info("[MessagingNode_taskInitiate] Node " + this.ID + " sent " + this.sendTracker + " number of messages");
 
+        // once messages are sent, need to report it to the registry
+        OverlayNodeReportsTaskFinished taskFinished = (OverlayNodeReportsTaskFinished) eventFactory.createEventByType(Protocol.OVERLAY_NODE_REPORTS_TASK_FINISHED);
+        taskFinished.setIpAddress(this.serverThread.getServerAddress());
+        taskFinished.setNodeID(this.ID);
+        taskFinished.setPortNumber(this.serverThread.getServerPort());
+
+        try {
+            TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.socket);
+            sender.sendData(taskFinished.getBytes());
+            LOGGER.info("[MessagingNode_taskInitiate] Node " + this.ID + " sent task finished");
+        } catch (IOException e) {
+            LOGGER.info("[MessagingNode_taskInitiate] Node " + this.ID + " sending task finished failed");
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -205,7 +263,7 @@ public class MessagingNode implements Node, Runnable {
      */
     private int getRandomDestinationID(){
 
-        if( this.allNodeIDs.length > 0 )
+        if( this.allNodeIDs.length > 1 )
         {
             int randomIndex ;
             do{
@@ -213,10 +271,13 @@ public class MessagingNode implements Node, Runnable {
                 randomIndex = generator.nextInt(this.allNodeIDs.length);
             }
             while (this.allNodeIDs[randomIndex] == this.ID);
+
+            LOGGER.info("[MessagingNode_getRandomDestinationID] Random destination created at Node "+this.ID);
             return this.allNodeIDs[randomIndex];
         }
         else
         {
+            LOGGER.info("[MessagingNode_getRandomDestinationID] There isn't sufficient number of nodes in the overlay");
             return -1;
         }
 
@@ -422,6 +483,8 @@ public class MessagingNode implements Node, Runnable {
     public void sendDeregisterEvent() {
         Event deregisterEvent = getDeregisterEvent();
         sendEvent(deregisterEvent);
+
+        //TODO terminate messaging node
     }
 
     /**
@@ -440,7 +503,6 @@ public class MessagingNode implements Node, Runnable {
     /**
      * Reset counters associated with traffic
      */
-    // TODO call once node sends OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY
     private void resetCounters()
     {
         sendTracker = 0;
@@ -448,5 +510,13 @@ public class MessagingNode implements Node, Runnable {
         relayTracker = 0;
         sendSummation = 0L;
         receiveSummation = 0L;
+    }
+
+    /**
+     * This method calls another function which handles printing of statistics
+     */
+    public void printCountersAndDiagnostics() {
+        StatisticsCollectorAndDisplay.printMNCounters(sendTracker, receiveTracker, relayTracker, sendSummation, receiveSummation);
+
     }
 }

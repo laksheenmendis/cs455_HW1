@@ -4,7 +4,7 @@ import java.io.*;
 
 public class NodeReportsOverlaySetupStatus implements Event {
 
-    private char messageType;
+    private int messageType;
     private int successStatus;
     private String infoString;
 
@@ -15,7 +15,7 @@ public class NodeReportsOverlaySetupStatus implements Event {
     public NodeReportsOverlaySetupStatus(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         this.successStatus = din.readInt();
         int length = din.readInt();
         byte [] infoBytes = new byte[length];
@@ -26,7 +26,7 @@ public class NodeReportsOverlaySetupStatus implements Event {
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.NODE_REPORTS_OVERLAY_SETUP_STATUS;
     }
 
@@ -35,7 +35,7 @@ public class NodeReportsOverlaySetupStatus implements Event {
         byte[] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar(messageType);
+        dout.writeInt(messageType);
         dout.writeInt(successStatus);
         byte [] infoStringBytes = infoString.getBytes();
         int infoStringLength = infoStringBytes.length;

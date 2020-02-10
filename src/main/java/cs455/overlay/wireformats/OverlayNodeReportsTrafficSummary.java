@@ -4,7 +4,7 @@ import java.io.*;
 
 public class OverlayNodeReportsTrafficSummary implements Event {
 
-    private char messageType;
+    private int messageType;
     private int assignedNodeID;
     private int totalPacketsSent; // only the ones that were started/initiated by the node
     private int totalPacketsRelayed; //received from a different node and forwarded
@@ -20,7 +20,7 @@ public class OverlayNodeReportsTrafficSummary implements Event {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         this.assignedNodeID = din.readInt();
         this.totalPacketsSent = din.readInt();
         this.totalPacketsRelayed = din.readInt();
@@ -32,7 +32,7 @@ public class OverlayNodeReportsTrafficSummary implements Event {
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY;
     }
 
@@ -41,7 +41,7 @@ public class OverlayNodeReportsTrafficSummary implements Event {
         byte[] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar(messageType);
+        dout.writeInt(messageType);
         dout.writeInt(assignedNodeID);
         dout.writeInt(totalPacketsSent);
         dout.writeInt(totalPacketsRelayed);
@@ -70,5 +70,45 @@ public class OverlayNodeReportsTrafficSummary implements Event {
         this.totalPacketsReceived = pckRcvd;
         this.sumOfPacketDataSent = sumDataSent;
         this.sumOfPacketDataReceived = sumDataRcvd;
+    }
+
+    public int getTotalPacketsSent() {
+        return totalPacketsSent;
+    }
+
+    public void setTotalPacketsSent(int totalPacketsSent) {
+        this.totalPacketsSent = totalPacketsSent;
+    }
+
+    public int getTotalPacketsRelayed() {
+        return totalPacketsRelayed;
+    }
+
+    public void setTotalPacketsRelayed(int totalPacketsRelayed) {
+        this.totalPacketsRelayed = totalPacketsRelayed;
+    }
+
+    public int getTotalPacketsReceived() {
+        return totalPacketsReceived;
+    }
+
+    public void setTotalPacketsReceived(int totalPacketsReceived) {
+        this.totalPacketsReceived = totalPacketsReceived;
+    }
+
+    public long getSumOfPacketDataSent() {
+        return sumOfPacketDataSent;
+    }
+
+    public void setSumOfPacketDataSent(long sumOfPacketDataSent) {
+        this.sumOfPacketDataSent = sumOfPacketDataSent;
+    }
+
+    public long getSumOfPacketDataReceived() {
+        return sumOfPacketDataReceived;
+    }
+
+    public void setSumOfPacketDataReceived(long sumOfPacketDataReceived) {
+        this.sumOfPacketDataReceived = sumOfPacketDataReceived;
     }
 }

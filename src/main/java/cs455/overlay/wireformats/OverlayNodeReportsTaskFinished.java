@@ -4,7 +4,7 @@ import java.io.*;
 
 public class OverlayNodeReportsTaskFinished implements Event {
 
-    private char messageType;
+    private int messageType;
     private byte[] ipAddress;
     private int portNumber;
     private int nodeID;
@@ -16,7 +16,7 @@ public class OverlayNodeReportsTaskFinished implements Event {
     public OverlayNodeReportsTaskFinished(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         int arrLength = din.readInt();
         din.readFully(this.ipAddress, 0, arrLength);
         this.portNumber = din.readInt();
@@ -26,7 +26,7 @@ public class OverlayNodeReportsTaskFinished implements Event {
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.OVERLAY_NODE_REPORTS_TASK_FINISHED;
     }
 
@@ -35,7 +35,7 @@ public class OverlayNodeReportsTaskFinished implements Event {
         byte [] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar(messageType);
+        dout.writeInt(messageType);
         int length = ipAddress.length;
         dout.writeInt(length);
         dout.write(ipAddress, 0, length);

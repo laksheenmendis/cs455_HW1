@@ -24,7 +24,7 @@ public class EventFactory {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
-        char messageType = din.readChar();
+        int messageType = din.readInt();
         Event event = null;
 
         switch (messageType) {
@@ -71,7 +71,7 @@ public class EventFactory {
      * @param messageType
      * @return
      */
-    public Event createEventByType(char messageType) {
+    public Event createEventByType(int messageType) {
         Event event = null;
 
         switch (messageType) {

@@ -4,7 +4,7 @@ import java.io.*;
 
 public class RegistryRequestsTrafficSummary implements Event{
 
-    private char messageType;
+    private int messageType;
 
     public RegistryRequestsTrafficSummary() {
         this.messageType = getType();
@@ -13,13 +13,13 @@ public class RegistryRequestsTrafficSummary implements Event{
     public RegistryRequestsTrafficSummary(byte[] marshalledBytes) throws IOException {
         ByteArrayInputStream baInputStream = new ByteArrayInputStream(marshalledBytes);
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
-        this.messageType = din.readChar();
+        this.messageType = din.readInt();
         baInputStream.close();
         din.close();
     }
 
     @Override
-    public char getType() {
+    public int getType() {
         return Protocol.REGISTRY_REQUESTS_TRAFFIC_SUMMARY;
     }
 
@@ -28,7 +28,7 @@ public class RegistryRequestsTrafficSummary implements Event{
         byte[] marshalledBytes = null;
         ByteArrayOutputStream baOutputStream = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(baOutputStream));
-        dout.writeChar( messageType );
+        dout.writeInt( messageType );
         dout.flush();
         marshalledBytes = baOutputStream.toByteArray();
         baOutputStream.close();
