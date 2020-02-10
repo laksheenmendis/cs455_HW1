@@ -19,9 +19,19 @@ public class StatisticsCollectorAndDisplay {
         System.out.println("\n\n\n");
     }
 
-    private static void printLineSeperator()
+    private static void printLineSeperator1()
     {
         System.out.println("--------------------------------------------------");
+    }
+
+    private static void printLineSeperator2()
+    {
+        System.out.println("-----------------------------------------------------------");
+    }
+
+    private static void printLineSeperator3()
+    {
+        System.out.println("------------------------------------------------------------------------------------");
     }
 
     public static void printMessagingNodeLise(Set<Map.Entry<String,Integer>> entries)
@@ -34,7 +44,7 @@ public class StatisticsCollectorAndDisplay {
 
         String s = String.format("|%-21s|%-15s|%-10s|",hostname,portNo, nodeID);
         System.out.println(s);
-        printLineSeperator();
+        printLineSeperator1();
 
         for(Map.Entry<String, Integer> entry :entries )
         {
@@ -45,7 +55,7 @@ public class StatisticsCollectorAndDisplay {
 
             String s1 = String.format("|%21s|%15s|%10d|",ip,port, id);
             System.out.println(s1);
-            printLineSeperator();
+            printLineSeperator1();
         }
     }
 
@@ -58,12 +68,13 @@ public class StatisticsCollectorAndDisplay {
             String heading = "Routing table of messaging node " + entry.getKey() + "\n";
             System.out.println(heading);
             printRoutingEntry(entry.getValue());
+            System.out.println("\n\n\n");
         }
     }
 
     private static void printRoutingEntry(RegistrySendsNodeManifest.NodeInfo[] nodeInfos)
     {
-        printLineSeperator();
+        printLineSeperator2();
         String distance = "Distance";
         String hostname= "Hostname";
         String portNo ="Port-number";
@@ -71,13 +82,13 @@ public class StatisticsCollectorAndDisplay {
 
         String s = String.format("|%-10s|%-21s|%-15s|%-10s|",distance,hostname,portNo, nodeID);
         System.out.println(s);
-        printLineSeperator();
+        printLineSeperator2();
 
         for(RegistrySendsNodeManifest.NodeInfo node :nodeInfos )
         {
             String s1 = String.format("|%10d|%21s|%15s|%10d|",node.get_distance(), node.getIPAddress(), node.getPortNumber(), node.getNodeID());
             System.out.println(s1);
-            printLineSeperator();
+            printLineSeperator2();
         }
     }
 
@@ -117,7 +128,7 @@ public class StatisticsCollectorAndDisplay {
 
         String s = String.format("|%-10s|%-12s|%-12s|%-12s|%-20s|%-20s|",empty, pckSent, pckRcvd, pckRlyd, sumSentH, sumRcvdH);
         System.out.println(s);
-        printLineSeperator();
+        printLineSeperator3();
 
         for(OverlayNodeReportsTrafficSummary trafficSummary : trafficSummaries)
         {
@@ -131,13 +142,13 @@ public class StatisticsCollectorAndDisplay {
 
             String s1 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
             System.out.println(s1);
-            printLineSeperator();
+            printLineSeperator3();
         }
 
         String sumS = "Sum";
         String s2 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
         System.out.println(s2);
-        printLineSeperator();
+        printLineSeperator3();
 
 
     }

@@ -453,7 +453,7 @@ public class MessagingNode implements Node, Runnable {
     private OverlayNodeSendsRegistration getRegisterEvent()
     {
         OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);
-        e1.setIpAddress(this.socket.getInetAddress().getAddress());
+        e1.setIpAddress(this.socket.getLocalAddress().getAddress());
         e1.setPortNumber(this.serverThread.getServerPort());
         System.out.println("Register server address " + generateIPAddress(e1.getIpAddress()) + " and port " + e1.getPortNumber());
         return e1;

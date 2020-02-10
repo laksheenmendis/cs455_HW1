@@ -22,7 +22,7 @@ public class Registry implements Node, Runnable {
     private HashMap<String, Integer> ipIDMap;
     //this map stores details of assignedID and socket details (with registry)
     private HashMap<Integer, Socket> idSocketMap;
-    private static final int ID_UPPER_LIMIT = 128;
+    private static final int ID_UPPER_LIMIT = 127;
     private static final int ID_LOWER_LIMIT = 0;
     private static EventFactory eventFactory;
     private TCPServerThread serverThread;

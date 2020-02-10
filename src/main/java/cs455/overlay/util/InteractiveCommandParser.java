@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.SocketException;
 
 /*
     This is used to parse the commands entered into the Registry and MessagingNode
@@ -89,9 +90,15 @@ public class InteractiveCommandParser implements Runnable{
                 }
 
 
+            } catch (SocketException se)
+            {
+                LOGGER.info("[InteractiveCommandParser_readAndProcess] " + se.getStackTrace());
+                se.printStackTrace();
+                break;
             } catch (IOException e) {
-                LOGGER.info("[InteractiveCommandParser_readAndProcess] " + e.getMessage());
+                LOGGER.info("[InteractiveCommandParser_readAndProcess] " + e.getStackTrace());
                 e.printStackTrace();
+                break;
             }
         }
     }
