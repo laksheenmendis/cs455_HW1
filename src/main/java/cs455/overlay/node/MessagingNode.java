@@ -139,12 +139,18 @@ public class MessagingNode implements Node, Runnable {
         else
         {
             int [] arr = event.getDisseminationTrace();
+            System.out.println("[MessagingNode_receiveOrRelay] DISSEMINATION TRACE \n");
+            for(int i = 0; i < arr.length; i++ )
+            {
+                System.out.print(arr[i] + ",");
+            }
+
             int [] arrNew = new int[arr.length + 1];
 
             arrNew = Arrays.copyOf(arr, arrNew.length);
             arrNew[arrNew.length-1] = this.ID;
             event.setDisseminationTrace(arrNew);
-            LOGGER.info("[MessagingNode_receiveOrRelay] Dissemination Trace is "+ arr);
+
 
             this.updateRelayTracker(event);
 
@@ -157,7 +163,7 @@ public class MessagingNode implements Node, Runnable {
                     TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
                     sender.sendData(event.getBytes());
                     //TODO remove this log message later
-                    System.out.println("[MessagingNode_receiveOrRelay] Node "+ this.ID + " relayed message");
+                    System.out.println("[MessagingNode_receiveOrRelay] Relayed message. Destination is " + event.getDestinationID() + ", forwarding to :" + forwardingID);
                 } catch (IOException e) {
                     //TODO change to logger
                     System.out.println("[MessagingNode_receiveOrRelay] Node "+ this.ID + " failed to relay message");
@@ -191,7 +197,8 @@ public class MessagingNode implements Node, Runnable {
             sender.sendData(trafficSummary.getBytes());
             LOGGER.info("[MessagingNode_readTrafficSummaryRequest] Traffic summary message sent from Node ID " + this.ID);
 
-            this.resetCounters(); //after successful sending, we need to reset the counters
+            //TODO uncomment this line
+//            this.resetCounters(); //after successful sending, we need to reset the counters
         } catch (IOException e) {
             LOGGER.info("[MessagingNode_readTrafficSummaryRequest] couldn't send traffic summary from node ID " + this.ID + e.getStackTrace());
             e.printStackTrace();
@@ -224,6 +231,7 @@ public class MessagingNode implements Node, Runnable {
                 nodeSendsData.setDisseminationTrace(new int[0]);
 
                 int forwardingNodeID = routingTable.getForwardingRoutingNode(destinationID);
+                System.out.println("In task initiate, destination is "+ destinationID + ", forwarding to " + forwardingNodeID);
 
                 //TODO check whether the value retrieved from the map is not null
                 try {
@@ -243,7 +251,7 @@ public class MessagingNode implements Node, Runnable {
 
         // once messages are sent, need to report it to the registry
         OverlayNodeReportsTaskFinished taskFinished = (OverlayNodeReportsTaskFinished) eventFactory.createEventByType(Protocol.OVERLAY_NODE_REPORTS_TASK_FINISHED);
-        taskFinished.setIpAddress(this.socket.getLocalAddress().getAddress());
+        taskFinished.setIpAddress(this.socket.getLocalAddress().getHostAddress().getBytes());
         taskFinished.setNodeID(this.ID);
         taskFinished.setPortNumber(this.serverThread.getServerPort());
 
@@ -383,16 +391,6 @@ public class MessagingNode implements Node, Runnable {
         }
     }
 
-    /**
-     * Generates the String IP Address using the byte array
-     * @param arr
-     * @return
-     */
-    private String generateIPAddress(byte[] arr)
-    {
-        return arr[0] + "." + arr[1] + "." + arr[2] + "." + arr[3];
-    }
-
     private void readDeRegisterResponse(RegistryReportsDeregistrationStatus event) {
         int status = event.getSuccessStatus();
         if( status != -1 && status == this.ID)
@@ -422,6 +420,7 @@ public class MessagingNode implements Node, Runnable {
         }
         else // error in deregistration
         {
+            System.out.println("[MessagingNode_readDeRegisterResponse] Node "+ this.ID + " " + event.getInfoString());
             LOGGER.info("[MessagingNode_readDeRegisterResponse] Node " + this.ID + " " + event.getInfoString());
         }
     }
@@ -453,12 +452,9 @@ public class MessagingNode implements Node, Runnable {
     private OverlayNodeSendsRegistration getRegisterEvent()
     {
         OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);
-//        System.out.println("Local Address" + generateIPAddress(this.socket.getLocalAddress().getAddress()));
-//        System.out.println("Local Host " + this.socket.getLocalAddress().getHostAddress());
-//        System.out.println("Inet Address" + generateIPAddress(this.socket.getInetAddress().getAddress()));
-        e1.setIpAddress(this.socket.getLocalAddress().getAddress());
+        e1.setIpAddress(this.socket.getLocalAddress().getHostAddress().getBytes());
         e1.setPortNumber(this.serverThread.getServerPort());
-        System.out.println("Register server address " + generateIPAddress(e1.getIpAddress()) + " and port " + e1.getPortNumber());
+        System.out.println("Register server address " + this.socket.getLocalAddress().getHostAddress() + " and port " + e1.getPortNumber());
         return e1;
     }
 
@@ -497,7 +493,7 @@ public class MessagingNode implements Node, Runnable {
     private OverlayNodeSendsDeregistration getDeregisterEvent()
     {
         OverlayNodeSendsDeregistration e1 = (OverlayNodeSendsDeregistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_DEREGISTRATION);
-        e1.setIpAddress(this.socket.getInetAddress().getAddress());
+        e1.setIpAddress(this.socket.getLocalAddress().getHostAddress().getBytes());
         e1.setAssignedID(this.ID);
         e1.setPortNumber(this.serverThread.getServerPort());
         return e1;

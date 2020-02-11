@@ -25,6 +25,12 @@ public class TrafficSummaryTracker implements Runnable {
             }
         }
 
+        try {
+            sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         LOGGER.info("[TrafficSummaryTracker_run] Received traffic summaries from all nodes");
         StatisticsCollectorAndDisplay.printTrafficSummary(registry.getTrafficSummaries());
     }

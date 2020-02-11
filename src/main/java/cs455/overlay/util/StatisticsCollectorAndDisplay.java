@@ -26,18 +26,18 @@ public class StatisticsCollectorAndDisplay {
 
     private static void printLineSeperator2()
     {
-        System.out.println("-----------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------");
     }
 
     private static void printLineSeperator3()
     {
-        System.out.println("------------------------------------------------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------------------------------");
     }
 
     public static void printMessagingNodeLise(Set<Map.Entry<String,Integer>> entries)
     {
         printSeparator();
-
+        printLineSeperator1();
         String hostname= "Hostname";
         String portNo ="Port-number";
         String nodeID = "Node ID";
@@ -126,7 +126,8 @@ public class StatisticsCollectorAndDisplay {
         String sumSentH = "Sum Values Sent";
         String sumRcvdH = "Sum Values Received";
 
-        String s = String.format("|%-10s|%-12s|%-12s|%-12s|%-20s|%-20s|",empty, pckSent, pckRcvd, pckRlyd, sumSentH, sumRcvdH);
+        printLineSeperator3();
+        String s = String.format("|%-10s|%-12s|%-17s|%-16s|%-16s|%-20s|",empty, pckSent, pckRcvd, pckRlyd, sumSentH, sumRcvdH);
         System.out.println(s);
         printLineSeperator3();
 
@@ -140,13 +141,15 @@ public class StatisticsCollectorAndDisplay {
 
             String node = "Node " + trafficSummary.getAssignedNodeID();
 
-            String s1 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
+//            String s1 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
+            String s1 = String.format("|%10s|%12d|%17d|%16d|%16d|%20d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
             System.out.println(s1);
             printLineSeperator3();
         }
 
         String sumS = "Sum";
-        String s2 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
+//        String s2 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
+        String s2 = String.format("|%10s|%12d|%17d|%16d|%16d|%20d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
         System.out.println(s2);
         printLineSeperator3();
 

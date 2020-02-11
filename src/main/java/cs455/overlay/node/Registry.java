@@ -114,9 +114,9 @@ public class Registry implements Node, Runnable {
         }
 
         // Start a thread to track traffic summary responses and then generate the output on console
-        TrafficSummaryTracker trafficSummaryTracker = new TrafficSummaryTracker(this);
-        Thread summaryTrackerThread = new Thread(trafficSummaryTracker);
-        summaryTrackerThread.start();
+//        TrafficSummaryTracker trafficSummaryTracker = new TrafficSummaryTracker(this);
+//        Thread summaryTrackerThread = new Thread(trafficSummaryTracker);
+//        summaryTrackerThread.start();
     }
 
     private synchronized void readOverlayTrafficSummary(OverlayNodeReportsTrafficSummary event, Socket socket) {
@@ -193,7 +193,7 @@ public class Registry implements Node, Runnable {
 
         LOGGER.info("[Registry_registerMessagingNode] started ");
 
-        String serverIPAddress = generateIPAddress(event.getIpAddress());
+        String serverIPAddress = new String(event.getIpAddress());
         int serverPort = event.getPortNumber();
 
         int ID = getID(serverIPAddress, serverPort);
@@ -211,16 +211,6 @@ public class Registry implements Node, Runnable {
                     "\nHence entries removed " + e.getStackTrace());
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Generates the String IP Address using the byte array
-     * @param arr
-     * @return
-     */
-    private String generateIPAddress(byte[] arr)
-    {
-        return arr[0] + "." + arr[1] + "." + arr[2] + "." + arr[3];
     }
 
     /**

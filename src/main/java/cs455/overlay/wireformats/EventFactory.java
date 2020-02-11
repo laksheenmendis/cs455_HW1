@@ -47,7 +47,7 @@ public class EventFactory {
                 event = new NodeReportsOverlaySetupStatus(marshalledBytes);
                 break;
             case Protocol.REGISTRY_REQUESTS_TASK_INITIATE:
-                event = new RegistryRequestsTaskInitiate();
+                event = new RegistryRequestsTaskInitiate(marshalledBytes);
                 break;
             case Protocol.OVERLAY_NODE_REPORTS_TASK_FINISHED:
                 event = new OverlayNodeReportsTaskFinished(marshalledBytes);
@@ -57,6 +57,9 @@ public class EventFactory {
                 break;
             case Protocol.OVERLAY_NODE_REPORTS_TRAFFIC_SUMMARY:
                 event = new OverlayNodeReportsTrafficSummary(marshalledBytes);
+                break;
+            case Protocol.OVERLAY_NODE_SENDS_DATA:
+                event = new OverlayNodeSendsData(marshalledBytes);
                 break;
             default:
                 return null;

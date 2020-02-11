@@ -188,7 +188,7 @@ public class RegistrySendsNodeManifest implements Event {
 
         public String getIPAddress()
         {
-            return ipAddress[0] + "." + ipAddress[1] + "." + ipAddress[2] + "." + ipAddress[3];
+            return new String(this.ipAddress);
         }
     }
 }

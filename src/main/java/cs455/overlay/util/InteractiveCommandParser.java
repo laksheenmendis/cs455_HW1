@@ -20,6 +20,7 @@ public class InteractiveCommandParser implements Runnable{
     private static final String CMD_PRINT_COUNTERS_AND_DIAGNOSTICS = "print-counters-and-diagnostics";
     private static final String CMD_EXIT_OVERLAY = "exit-overlay";
     private static final String CMD_LIST_ROUTING_TABLES = "list-routing-tables";
+    private static final String CMD_ADDITIONAL_PRINT_STATISTICS = "statistics";     // additional command which lists the statistics
     private Node node;
     private static Logger LOGGER = Logger.getLogger(InteractiveCommandParser.class.getName());
 
@@ -81,6 +82,9 @@ public class InteractiveCommandParser implements Runnable{
                     int noOfMessages = Integer.parseInt(inArr[1]);
                     Registry registry = (Registry)node;
                     registry.initiateTasks(noOfMessages);
+                } else if( inArr[0].equals(CMD_ADDITIONAL_PRINT_STATISTICS) && node instanceof Registry){
+                    Registry registry = (Registry)node;
+                    StatisticsCollectorAndDisplay.printTrafficSummary(registry.getTrafficSummaries());
                 }
                 // Messaging Node commands
                 else if ( inArr[0].equals(CMD_PRINT_COUNTERS_AND_DIAGNOSTICS) && node instanceof MessagingNode) {

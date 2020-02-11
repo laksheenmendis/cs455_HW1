@@ -16,7 +16,7 @@ public class RegistryRequestsTaskInitiate implements Event {
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
 
         this.messageType = din.readInt();
-        noOfMessages = din.readInt();
+        this.noOfMessages = din.readInt();
         baInputStream.close();
         din.close();
     }

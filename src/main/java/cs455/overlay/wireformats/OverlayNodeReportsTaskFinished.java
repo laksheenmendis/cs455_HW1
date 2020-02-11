@@ -18,6 +18,7 @@ public class OverlayNodeReportsTaskFinished implements Event {
         DataInputStream din = new DataInputStream(new BufferedInputStream(baInputStream));
         this.messageType = din.readInt();
         int arrLength = din.readInt();
+        this.ipAddress = new byte[arrLength];
         din.readFully(this.ipAddress, 0, arrLength);
         this.portNumber = din.readInt();
         this.nodeID = din.readInt();
