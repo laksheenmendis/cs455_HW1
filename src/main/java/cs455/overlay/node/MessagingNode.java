@@ -139,7 +139,7 @@ public class MessagingNode implements Node, Runnable {
         else
         {
             int [] arr = event.getDisseminationTrace();
-            System.out.println("[MessagingNode_receiveOrRelay] DISSEMINATION TRACE \n");
+            System.out.println("[MessagingNode_receiveOrRelay] DISSEMINATION TRACE length " + arr.length);
             for(int i = 0; i < arr.length; i++ )
             {
                 System.out.print(arr[i] + ",");
