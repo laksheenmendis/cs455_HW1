@@ -72,11 +72,6 @@ public class TCPServerThread implements Runnable {
         return serverSocket.getLocalPort();
     }
 
-    public byte [] getServerAddress()
-    {
-        return serverSocket.getInetAddress().getAddress();
-    }
-
     public void terminateServer() throws IOException
     {
         serverSocket.close();

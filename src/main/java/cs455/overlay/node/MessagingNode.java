@@ -243,7 +243,7 @@ public class MessagingNode implements Node, Runnable {
 
         // once messages are sent, need to report it to the registry
         OverlayNodeReportsTaskFinished taskFinished = (OverlayNodeReportsTaskFinished) eventFactory.createEventByType(Protocol.OVERLAY_NODE_REPORTS_TASK_FINISHED);
-        taskFinished.setIpAddress(this.serverThread.getServerAddress());
+        taskFinished.setIpAddress(this.socket.getLocalAddress().getAddress());
         taskFinished.setNodeID(this.ID);
         taskFinished.setPortNumber(this.serverThread.getServerPort());
 
@@ -369,7 +369,7 @@ public class MessagingNode implements Node, Runnable {
         boolean successful = false;
         Socket socket;
         try {
-            socket = new Socket(generateIPAddress(nodeInfo.getIpAddress()), nodeInfo.getPortNumber());
+            socket = new Socket(new String(nodeInfo.getIpAddress()), nodeInfo.getPortNumber());
             this.nodeSocketMap.put(nodeInfo.getNodeID(), socket);
             RoutingTable.routingMap.put(nodeInfo.getNodeID(), entry);
             successful = true;
@@ -453,6 +453,9 @@ public class MessagingNode implements Node, Runnable {
     private OverlayNodeSendsRegistration getRegisterEvent()
     {
         OverlayNodeSendsRegistration e1 = (OverlayNodeSendsRegistration) eventFactory.createEventByType(Protocol.OVERLAY_NODE_SENDS_REGISTRATION);
+//        System.out.println("Local Address" + generateIPAddress(this.socket.getLocalAddress().getAddress()));
+//        System.out.println("Local Host " + this.socket.getLocalAddress().getHostAddress());
+//        System.out.println("Inet Address" + generateIPAddress(this.socket.getInetAddress().getAddress()));
         e1.setIpAddress(this.socket.getLocalAddress().getAddress());
         e1.setPortNumber(this.serverThread.getServerPort());
         System.out.println("Register server address " + generateIPAddress(e1.getIpAddress()) + " and port " + e1.getPortNumber());
