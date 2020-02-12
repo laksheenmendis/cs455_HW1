@@ -4,8 +4,11 @@ import cs455.overlay.node.Node;
 import cs455.overlay.wireformats.Event;
 import cs455.overlay.wireformats.EventFactory;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -15,7 +18,7 @@ public class TCPConnection {
     public static class TCPSender{
         private Socket socket;
         private DataOutputStream dout;
-        static Logger LOGGER = Logger.getLogger(TCPReceiverThread.class.getName());
+        static Logger LOGGER = Logger.getLogger(TCPSender.class.getName());
 
         public TCPSender(Socket socket) throws IOException {
             this.socket = socket;
@@ -27,7 +30,7 @@ public class TCPConnection {
             dout.writeInt(dataLength);
             dout.write(dataToSend, 0, dataLength);
             dout.flush();
-            LOGGER.info("[TCPSender_sendData] data sent ");
+            LOGGER.log(Priority.INFO,"[TCPSender_sendData] data sent ");
         }
     }
 
@@ -54,26 +57,24 @@ public class TCPConnection {
                     din.readFully(data, 0, dataLength);
 
                     Event event = EventFactory.getInstance().createEvent(data);
-                    if ( event != null )
-                    {
+                    if (event != null) {
                         System.out.println(event.getClass().getSimpleName() + " Message received");
-                    }
-                    else
-                    {
+                    } else {
                         System.out.println("\nEVENT IS NULL\n");
                     }
 
-                    LOGGER.info("[TCPReceiverThread_run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
+                    LOGGER.log(Priority.INFO,"[TCPReceiverThread_run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
                     node.onEvent(event, socket);
 
-                } catch (SocketException se) {
-                    LOGGER.info("[TCPReceiverThread_run] SocketException at " + node.getClass().getSimpleName() + se.getStackTrace());
+                } catch (EOFException ef) {
+                    LOGGER.log(Priority.ERROR,"[TCPReceiverThread_run] EOFException at " + node.getClass().getSimpleName() + ef.getStackTrace());
+                    ef.printStackTrace();
+                }catch (SocketException se) {
+                    LOGGER.log(Priority.ERROR,"[TCPReceiverThread_run] SocketException at " + node.getClass().getSimpleName() + se.getStackTrace());
                     se.printStackTrace();
-                    break;
                 } catch (IOException ioe) {
-                    LOGGER.info("[TCPReceiverThread_run] IOException " +  node.getClass().getSimpleName() + ioe.getStackTrace());
+                    LOGGER.log(Priority.ERROR,"[TCPReceiverThread_run] IOException " +  node.getClass().getSimpleName() + ioe.getStackTrace());
                     ioe.printStackTrace();
-                    break;
                 }
             }
         }

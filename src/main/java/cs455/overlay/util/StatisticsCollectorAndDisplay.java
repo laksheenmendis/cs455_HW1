@@ -141,15 +141,13 @@ public class StatisticsCollectorAndDisplay {
 
             String node = "Node " + trafficSummary.getAssignedNodeID();
 
-//            String s1 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
-            String s1 = String.format("|%10s|%12d|%17d|%16d|%16d|%20d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
+            String s1 = String.format("|%10s|%,12d|%,17d|%,16d|%,16d|%,20d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
             System.out.println(s1);
             printLineSeperator3();
         }
 
         String sumS = "Sum";
-//        String s2 = String.format("|%10s|%12,d|%12,d|%12,d|%20,d|%20,d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
-        String s2 = String.format("|%10s|%12d|%17d|%16d|%16d|%20d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
+        String s2 = String.format("|%10s|%,12d|%,17d|%,16d|%,16d|%,20d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
         System.out.println(s2);
         printLineSeperator3();
 

@@ -9,7 +9,9 @@ import cs455.overlay.util.StatisticsCollectorAndDisplay;
 import cs455.overlay.util.TrafficSummaryTracker;
 import cs455.overlay.wireformats.*;
 import cs455.overlay.wireformats.RegistrySendsNodeManifest.NodeInfo;
+import org.apache.log4j.Priority;
 
+import javax.security.auth.PrivateCredentialPermission;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
@@ -53,7 +55,7 @@ public class Registry implements Node, Runnable {
             cmdThread.start();
 
         } catch (IOException e) {
-            LOGGER.info("Couldn't start Registry on " + PORT_NUMBER + " " + e.getStackTrace());
+            LOGGER.log(Priority.ERROR, "Couldn't start Registry on " + PORT_NUMBER + " " + e.getStackTrace());
             e.printStackTrace();
         }
 
@@ -63,7 +65,7 @@ public class Registry implements Node, Runnable {
     public void onEvent(Event event, Socket socket) {
 
         int messageType = event.getType();
-        LOGGER.info("[Registry_onEvent] received " + messageType);
+        LOGGER.log(Priority.INFO, "[Registry_onEvent] received " + messageType);
 
         switch (messageType) {
             case Protocol.OVERLAY_NODE_SENDS_REGISTRATION:
@@ -71,7 +73,6 @@ public class Registry implements Node, Runnable {
                 break;
             case Protocol.NODE_REPORTS_OVERLAY_SETUP_STATUS:
                 readOverlaySetupStatus((NodeReportsOverlaySetupStatus) event, socket);
-                //TODO
                 break;
             case Protocol.OVERLAY_NODE_SENDS_DEREGISTRATION:
                 deregisterMessagingNode((OverlayNodeSendsDeregistration) event, socket);
@@ -97,7 +98,13 @@ public class Registry implements Node, Runnable {
             }
         }
 
-        LOGGER.info("[Registry_run] Nodes finished reporting task summaries");
+        try {
+            sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        LOGGER.log(Priority.INFO, "[Registry_run] Nodes finished reporting task summaries");
         RegistryRequestsTrafficSummary trafficSummaryReq = (RegistryRequestsTrafficSummary) eventFactory.createEventByType(Protocol.REGISTRY_REQUESTS_TRAFFIC_SUMMARY);
 
         // send to all existing messages
@@ -106,29 +113,29 @@ public class Registry implements Node, Runnable {
             try {
                 TCPConnection.TCPSender sender = new TCPConnection.TCPSender(entry.getValue());
                 sender.sendData(trafficSummaryReq.getBytes());
-                LOGGER.info("[Registry_run] Traffic summary request successfully sent to Node ID " + entry.getKey());
+                LOGGER.log(Priority.INFO, "[Registry_run] Traffic summary request successfully sent to Node ID " + entry.getKey());
             } catch (IOException e) {
-                LOGGER.info("[Registry_run] Failed to send Traffic summary request to Node ID " + entry.getKey() + " " + e.getStackTrace());
+                LOGGER.log(Priority.ERROR, "[Registry_run] Failed to send Traffic summary request to Node ID " + entry.getKey() + " " + e.getStackTrace());
                 e.printStackTrace();
             }
         }
 
         // Start a thread to track traffic summary responses and then generate the output on console
-//        TrafficSummaryTracker trafficSummaryTracker = new TrafficSummaryTracker(this);
-//        Thread summaryTrackerThread = new Thread(trafficSummaryTracker);
-//        summaryTrackerThread.start();
+        TrafficSummaryTracker trafficSummaryTracker = new TrafficSummaryTracker(this);
+        Thread summaryTrackerThread = new Thread(trafficSummaryTracker);
+        summaryTrackerThread.start();
     }
 
     private synchronized void readOverlayTrafficSummary(OverlayNodeReportsTrafficSummary event, Socket socket) {
         trafficSummaries.add(event);
-        LOGGER.info("[Registry_readOverlayTrafficSummary] Traffic Summary received from Node "+ event.getAssignedNodeID());
+        LOGGER.log(Priority.INFO, "[Registry_readOverlayTrafficSummary] Traffic Summary received from Node "+ event.getAssignedNodeID());
     }
 
     private void readOverlaySetupStatus(NodeReportsOverlaySetupStatus event, Socket socket) {
         if (event.getSuccessStatus() == -1) {
-            //TODO check what needs to be done
+            LOGGER.log(Priority.ERROR, event.getInfoString());
         } else {
-            //TODO check what needs to be done
+            LOGGER.log(Priority.INFO, event.getInfoString() + " at " + event.getSuccessStatus());
         }
     }
 
@@ -137,24 +144,24 @@ public class Registry implements Node, Runnable {
         // TODO check this
         if ( idSocketMap.get(event.getNodeID()).equals(socket) )
         {
+            LOGGER.log(Priority.INFO, "[Registry_readTaskFinishedMsg] Received from "+ event.getNodeID());
             updateTaskFinishedCount();
         }
         else
         {
-            LOGGER.info("[Registry_readTaskFinishedMsg] "+ event.getClass().getSimpleName() + " message is not from a valid Messaging Node");
+            LOGGER.log(Priority.WARN, "[Registry_readTaskFinishedMsg] "+ event.getClass().getSimpleName() + " message is not from a valid Messaging Node");
         }
     }
 
     private synchronized void updateTaskFinishedCount()
     {
-        LOGGER.info("[Registry_updateTaskFinishedCount] count updated");
+        LOGGER.log(Priority.INFO, "[Registry_updateTaskFinishedCount] count updated");
         taskFinishedReportCount++;
     }
 
     private void deregisterMessagingNode(OverlayNodeSendsDeregistration event, Socket socket) {
 
-        //TODO make sure to do the checks
-        LOGGER.info("[Registry_deregisterMessagingNode] started ");
+        LOGGER.log(Priority.INFO, "[Registry_deregisterMessagingNode] started ");
 
         //check for validity of request
         boolean inConnectionCache = TCPConnectionsCache.inCache(socket);
@@ -179,19 +186,21 @@ public class Registry implements Node, Runnable {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
             try {
                 sender.sendData(deregistrationResponse.getBytes());
+                LOGGER.log(Priority.INFO, "[Registry_deregisterMessagingNode] sent");
             } catch (IOException e) {
-                LOGGER.info("[Registry_deregisterMessagingNode] Couldn't communicate to Messaging Node with ID " + event.getAssignedID() + " " + e.getStackTrace());
+                LOGGER.log(Priority.ERROR,"[Registry_deregisterMessagingNode] Couldn't communicate to Messaging Node with ID " + event.getAssignedID() + " " + e.getStackTrace());
                 e.printStackTrace();
             }
         } catch (IOException e) {
-            LOGGER.info("[Registry_deregisterMessagingNode] Error in creating TCP Sender " + e.getStackTrace());
+            LOGGER.log(Priority.ERROR,"[Registry_deregisterMessagingNode] Error in creating TCP Sender " + e.getStackTrace());
+            e.printStackTrace();
         }
 
     }
 
     private void registerMessagingNode(OverlayNodeSendsRegistration event, Socket socket) {
 
-        LOGGER.info("[Registry_registerMessagingNode] started ");
+        LOGGER.log(Priority.INFO,"[Registry_registerMessagingNode] started ");
 
         String serverIPAddress = new String(event.getIpAddress());
         int serverPort = event.getPortNumber();
@@ -203,11 +212,12 @@ public class Registry implements Node, Runnable {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
             RegistryReportsRegistrationStatus registrationResponse = getRegistrationResponse(ID);
             sender.sendData(registrationResponse.getBytes());
+            LOGGER.log(Priority.INFO, "[Registry_registerMessagingNode] sent");
         } catch (IOException e) {
             ipIDMap.remove(generateKey(serverIPAddress, serverPort));
             idSocketMap.remove(ID);
             TCPConnectionsCache.removeEntry(socket);
-            LOGGER.info("[Registry_registerMessagingNode] Couldn't communicate to Messaging Node with ID " + ID +
+            LOGGER.log(Priority.ERROR,"[Registry_registerMessagingNode] Couldn't communicate to Messaging Node with ID " + ID +
                     "\nHence entries removed " + e.getStackTrace());
             e.printStackTrace();
         }
@@ -235,7 +245,7 @@ public class Registry implements Node, Runnable {
         registrationStatus.setSuccessStatus(ID);
         String info = Constants.REGISTRATION_SUCCESSFULL + "The number of messaging nodes currently constituting the overlay is " + ipIDMap.size();
         registrationStatus.setInfoString(info);
-        LOGGER.info("[Registry_getRegistrationResponse] Registration Status response generated ");
+        LOGGER.log(Priority.INFO,"[Registry_getRegistrationResponse] Registration Status response generated ");
         return registrationStatus;
     }
 
@@ -243,7 +253,7 @@ public class Registry implements Node, Runnable {
         RegistryReportsDeregistrationStatus deregistrationStatus = (RegistryReportsDeregistrationStatus) eventFactory.createEventByType(Protocol.REGISTRY_REPORTS_DEREGISTRATION_STATUS);
         deregistrationStatus.setSuccessStatus(ID);
         deregistrationStatus.setInfoString(ID != -1 ? Constants.DEREGISTRATION_SUCCESSFULL : Constants.DEREGISTRATION_FAILED);
-        LOGGER.info("[Registry_getDeregistrationResponse] Deregistration Status response generated ");
+        LOGGER.log(Priority.INFO,"[Registry_getDeregistrationResponse] Deregistration Status response generated ");
         return deregistrationStatus;
     }
 
@@ -263,7 +273,7 @@ public class Registry implements Node, Runnable {
      */
     public void setupOverlay(int noOfRoutingEntries) {
 
-        LOGGER.info("[Registry_setupOverlay] Setting up overlay started");
+        LOGGER.log(Priority.INFO,"[Registry_setupOverlay] Setting up overlay started");
         List<Integer> hopsList = new ArrayList<>(noOfRoutingEntries);
 
         // calculate hop distances
@@ -285,10 +295,6 @@ public class Registry implements Node, Runnable {
             for (int j : hopsList) {
                 int hopNodeID;
                 if (i + j >= noOfNodes) {
-//                    System.out.println("Trying to get element " + (i + j - noOfNodes));
-//                    System.out.println("i is "+ i);
-//                    System.out.println("j is "+ j);
-//                    System.out.println("No of nodes is "+ noOfNodes);
                     hopNodeID = nodeIDList.get(i + j - noOfNodes);
                 } else {
                     hopNodeID = nodeIDList.get(i + j);
@@ -303,7 +309,7 @@ public class Registry implements Node, Runnable {
                 routingEntryTreeMap.put(messagingNodeID, nodeInfoArray);
             }
         }
-        LOGGER.info("[Registry_setupOverlay] Setting up overlay completed");
+        LOGGER.log(Priority.INFO,"[Registry_setupOverlay] Setting up overlay completed");
     }
 
     /**
@@ -317,7 +323,7 @@ public class Registry implements Node, Runnable {
      */
     private boolean sendNodeManifest(int messagingNodeID, int noOfRoutingEntries, NodeInfo[] nodeInfoArray, int noOfNodes, List<Integer> nodeIDList) {
 
-        LOGGER.info("[Registry_sendNodeManifest] Started forming Node Manifest to Node ID " + messagingNodeID);
+        LOGGER.log(Priority.INFO,"[Registry_sendNodeManifest] Started forming Node Manifest to Node ID " + messagingNodeID);
         RegistrySendsNodeManifest nodeManifest = (RegistrySendsNodeManifest) eventFactory.createEventByType(Protocol.REGISTRY_SENDS_NODE_MANIFEST);
         nodeManifest.setRoutingTableSize(noOfRoutingEntries);
         nodeManifest.setNodeInfoList(nodeInfoArray);
@@ -335,11 +341,11 @@ public class Registry implements Node, Runnable {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
             sender.sendData(nodeManifest.getBytes());
         } catch (IOException e) {
-            LOGGER.info("[Registry_sendNodeManifest] Failed to send Node Manifest to Node ID " + messagingNodeID + " " + e.getStackTrace());
+            LOGGER.log(Priority.ERROR,"[Registry_sendNodeManifest] Failed to send Node Manifest to Node ID " + messagingNodeID + " " + e.getStackTrace());
             e.printStackTrace();
             return false;
         }
-        LOGGER.info("[Registry_sendNodeManifest] Node Manifest successfully sent to Node ID " + messagingNodeID);
+        LOGGER.log(Priority.INFO,"[Registry_sendNodeManifest] Node Manifest successfully sent to Node ID " + messagingNodeID);
         return true;
     }
 
@@ -374,16 +380,19 @@ public class Registry implements Node, Runnable {
 
         RegistryRequestsTaskInitiate taskInitiate = (RegistryRequestsTaskInitiate) eventFactory.createEventByType(Protocol.REGISTRY_REQUESTS_TASK_INITIATE);
         taskInitiate.setNoOfMessages(noOfMessages);
-        
+
+        //initialize/re-initialize the list
+        trafficSummaries = new ArrayList<>();
+
         // send to all existing messages
         for(Map.Entry<Integer, Socket> entry : idSocketMap.entrySet())
         {
             try {
                 TCPConnection.TCPSender sender = new TCPConnection.TCPSender(entry.getValue());
                 sender.sendData(taskInitiate.getBytes());
-                LOGGER.info("[Registry_initiateTasks] Task Initiate successfully sent to Node ID " + entry.getKey());
+                LOGGER.log(Priority.INFO,"[Registry_initiateTasks] Task Initiate successfully sent to Node ID " + entry.getKey());
             } catch (IOException e) {
-                LOGGER.info("[Registry_initiateTasks] Failed to send Task Initiate to Node ID " + entry.getKey() + " " + e.getStackTrace());
+                LOGGER.log(Priority.ERROR,"[Registry_initiateTasks] Failed to send Task Initiate to Node ID " + entry.getKey() + " " + e.getStackTrace());
                 e.printStackTrace();
             }
         }

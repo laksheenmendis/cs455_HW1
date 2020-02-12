@@ -2,6 +2,8 @@ package cs455.overlay.util;
 
 import cs455.overlay.node.Registry;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
+
 import static java.lang.Thread.sleep;
 
 public class TrafficSummaryTracker implements Runnable {
@@ -31,7 +33,7 @@ public class TrafficSummaryTracker implements Runnable {
             e.printStackTrace();
         }
 
-        LOGGER.info("[TrafficSummaryTracker_run] Received traffic summaries from all nodes");
+        LOGGER.log(Priority.INFO,"[TrafficSummaryTracker_run] Received traffic summaries from all nodes");
         StatisticsCollectorAndDisplay.printTrafficSummary(registry.getTrafficSummaries());
     }
 }
