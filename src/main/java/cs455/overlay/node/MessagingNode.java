@@ -12,10 +12,9 @@ import cs455.overlay.wireformats.*;
 import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.*;
 
-public class MessagingNode implements Node, Runnable {
+public class MessagingNode implements Node {
 
     private Socket socket;
     private static EventFactory eventFactory;
@@ -67,18 +66,12 @@ public class MessagingNode implements Node, Runnable {
                 Thread cmdThread = new Thread(cmdParser);
                 cmdThread.start();
 
-                try {
-                    messagingNode.sendRegisterEvent();
+                messagingNode.sendRegisterEvent();
 
-                    // receiver which is connected with Registry
-                    TCPConnection.TCPReceiverThread receiverFromRegistry = new TCPConnection.TCPReceiverThread(messagingNode.socket, messagingNode);
-                    messagingNode.registryReceiver = new Thread(receiverFromRegistry);
-                    messagingNode.registryReceiver.start();
-                } catch (UnknownHostException eh) {
-                    LOGGER.info("[MessagingNode_main] Registration Failed " + eh.getStackTrace());
-                    eh.printStackTrace();
-                    messagingNode.serverT.stop();
-                }
+                // receiver which is connected with Registry
+                TCPConnection.TCPReceiverThread receiverFromRegistry = new TCPConnection.TCPReceiverThread(messagingNode.socket, messagingNode);
+                messagingNode.registryReceiver = new Thread(receiverFromRegistry);
+                messagingNode.registryReceiver.start();
             } catch (IOException e1) {
                 LOGGER.info("[MessagingNode_main] Server not started " + e1.getStackTrace());
                 e1.printStackTrace();
@@ -87,12 +80,6 @@ public class MessagingNode implements Node, Runnable {
             LOGGER.info("[MessagingNode_main] couldn't connect to Registry " + e.getStackTrace());
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public void run() {
-
-
     }
 
     @Override
@@ -192,17 +179,9 @@ public class MessagingNode implements Node, Runnable {
         trafficSummary.setAssignedNodeID(this.ID);
         trafficSummary.setTrafficDetails(this.sendTracker, this.relayTracker, this.receiveTracker, this.sendSummation, this.receiveSummation);
 
-        try {
-            TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.socket);
-            sender.sendData(trafficSummary.getBytes());
-            LOGGER.info("[MessagingNode_readTrafficSummaryRequest] Traffic summary message sent from Node ID " + this.ID);
-
-            //TODO uncomment this line
+        sendEvent(trafficSummary);
+        //TODO uncomment this line
 //            this.resetCounters(); //after successful sending, we need to reset the counters
-        } catch (IOException e) {
-            LOGGER.info("[MessagingNode_readTrafficSummaryRequest] couldn't send traffic summary from node ID " + this.ID + e.getStackTrace());
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -233,9 +212,10 @@ public class MessagingNode implements Node, Runnable {
                 int forwardingNodeID = routingTable.getForwardingRoutingNode(destinationID);
                 System.out.println("In task initiate, destination is "+ destinationID + ", forwarding to " + forwardingNodeID);
 
-                //TODO check whether the value retrieved from the map is not null
+                TCPConnection.TCPSender sender;
+                Socket savedSocket = this.nodeSocketMap.get(forwardingNodeID);
                 try {
-                    TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.nodeSocketMap.get(forwardingNodeID));
+                    sender = new TCPConnection.TCPSender(savedSocket);
                     sender.sendData(nodeSendsData.getBytes());
                     this.sendTracker += 1;
                     this.sendSummation += payload;
@@ -255,14 +235,7 @@ public class MessagingNode implements Node, Runnable {
         taskFinished.setNodeID(this.ID);
         taskFinished.setPortNumber(this.serverThread.getServerPort());
 
-        try {
-            TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.socket);
-            sender.sendData(taskFinished.getBytes());
-            LOGGER.info("[MessagingNode_taskInitiate] Node " + this.ID + " sent task finished");
-        } catch (IOException e) {
-            LOGGER.info("[MessagingNode_taskInitiate] Node " + this.ID + " sending task finished failed");
-            e.printStackTrace();
-        }
+        sendEvent(taskFinished);
     }
 
     /**
@@ -325,7 +298,7 @@ public class MessagingNode implements Node, Runnable {
 
             if(!successStatus)
             {
-                sb.append(this.ID +" to " + nodeInfos[j].getNodeID() + " unsuccessfull\n");
+                sb.append("Connection from " + this.ID +" to " + nodeInfos[j].getNodeID() + " unsuccessfull\n");
             }
         }
         LOGGER.info("[MessagingNode_readNodeManifestFromRegistry] Routing table creation finished at Node : " + this.ID);
@@ -355,14 +328,7 @@ public class MessagingNode implements Node, Runnable {
             overlaySetupStatus.setInfoString(failureMsg);
         }
 
-        try {
-            TCPConnection.TCPSender sender = new TCPConnection.TCPSender(this.socket);
-            sender.sendData(overlaySetupStatus.getBytes());
-            LOGGER.info("[MessagingNode_sendOverlaySetupStatus] Overlay setup status message sent from Node ID "+ this.ID);
-        } catch (IOException e) {
-            LOGGER.info("[MessagingNode_sendOverlaySetupStatus] couldn't send the overlay setup status from node ID " + this.ID + e.getStackTrace());
-            e.printStackTrace();
-        }
+        sendEvent(overlaySetupStatus);
     }
 
     /**
@@ -396,7 +362,7 @@ public class MessagingNode implements Node, Runnable {
         if( status != -1 && status == this.ID)
         {
             LOGGER.info("[MessagingNode_readDeRegisterResponse] Node " + this.ID + " Deregistration successful");
-
+            System.exit(0);
             //TODO when should we close these connections...??
             /*try {
                 LOGGER.info("[MessagingNode_readDeRegisterResponse] Node " + this.ID + " closing all sockets");
@@ -437,10 +403,10 @@ public class MessagingNode implements Node, Runnable {
             LOGGER.info("[MessagingNode_readRegisterResponse] Registry returned -1 " +event.getInfoString());
             try {
                 this.socket.close();
+                this.serverThread.terminateServer();
             } catch (IOException e) {
                 LOGGER.info("[MessagingNode_readRegisterResponse] " + e.getStackTrace());
                 e.printStackTrace();
-                this.serverT.stop();
             }
         }
     }
@@ -482,8 +448,6 @@ public class MessagingNode implements Node, Runnable {
     public void sendDeregisterEvent() {
         Event deregisterEvent = getDeregisterEvent();
         sendEvent(deregisterEvent);
-
-        //TODO terminate messaging node
     }
 
     /**
@@ -514,7 +478,7 @@ public class MessagingNode implements Node, Runnable {
     /**
      * This method calls another function which handles printing of statistics
      */
-    public void printCountersAndDiagnostics() {
+    public synchronized void printCountersAndDiagnostics() {
         StatisticsCollectorAndDisplay.printMNCounters(sendTracker, receiveTracker, relayTracker, sendSummation, receiveSummation);
 
     }
