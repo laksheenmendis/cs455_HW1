@@ -20,7 +20,7 @@ public class MessagingNode implements Node {
     private Socket socket;
     private static EventFactory eventFactory;
     private int sendTracker = 0;        //number of data packets that were sent by that node
-    private int receiveTracker = 0;     //number of packets that were received
+    private volatile int receiveTracker = 0;     //number of packets that were received
     private int relayTracker = 0;       //number of packets that a node relays
     private long sendSummation = 0L;    //sums the values of the random numbers that are sent
     private long receiveSummation = 0L; //sums values of the payloads that are received
@@ -118,6 +118,7 @@ public class MessagingNode implements Node {
         if( event.getDestinationID() == this.ID )
         {
             this.updateReceiveTrackers(event.getPayload());
+            LOGGER.log(Level.INFO, "THIS IS THE DESTINATION");
         }
         else
         {
@@ -146,6 +147,7 @@ public class MessagingNode implements Node {
                     TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
                     sender.sendData(event.getBytes());
                     LOGGER.log(Level.INFO,"[MessagingNode_receiveOrRelay] Relayed message. Destination is " + event.getDestinationID() + ", forwarding to :" + forwardingID);
+                    LOGGER.log(Level.INFO, "[MessagingNode_receiveOrRelay] LENGTH OF THE EVENT IS "+ event.getBytes().length );
                 } catch (IOException e) {
                     LOGGER.log(Level.ERROR,"[MessagingNode_receiveOrRelay] Node "+ this.ID + " failed to relay message" + e.getStackTrace());
                     e.printStackTrace();
@@ -208,6 +210,7 @@ public class MessagingNode implements Node {
                 TCPConnection.TCPSender sender;
                 Socket savedSocket = this.nodeSocketMap.get(forwardingNodeID);
                 try {
+                    LOGGER.log(Level.INFO, "[MessagingNode_taskInitiate] LENGTH OF THE EVENT IS "+ nodeSendsData.getBytes().length);
                     sender = new TCPConnection.TCPSender(savedSocket);
                     sender.sendData(nodeSendsData.getBytes());
                     this.sendTracker += 1;

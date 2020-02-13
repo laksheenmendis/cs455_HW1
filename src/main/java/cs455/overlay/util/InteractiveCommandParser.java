@@ -21,7 +21,6 @@ public class InteractiveCommandParser implements Runnable{
     private static final String CMD_PRINT_COUNTERS_AND_DIAGNOSTICS = "print-counters-and-diagnostics";
     private static final String CMD_EXIT_OVERLAY = "exit-overlay";
     private static final String CMD_LIST_ROUTING_TABLES = "list-routing-tables";
-    private static final String CMD_ADDITIONAL_PRINT_STATISTICS = "statistics";     // additional command which lists the statistics
     private Node node;
     private static Logger LOGGER = Logger.getLogger(InteractiveCommandParser.class.getName());
 
@@ -59,7 +58,7 @@ public class InteractiveCommandParser implements Runnable{
                     //sending every messaging node the REGISTRY_SENDS_NODE_MANIFEST message
                     if( inArr.length == 1 )
                     {
-                        System.out.println("[InteractiveCommandParser_readAndProcess] Invalid command, another argument required");
+                        LOGGER.log(Level.WARN,"[InteractiveCommandParser_readAndProcess] Invalid command, another argument required");
                         continue;
                     }
                     int noOfRoutingEntries = Integer.parseInt(inArr[1]);
@@ -77,15 +76,12 @@ public class InteractiveCommandParser implements Runnable{
                     //results in the registry sending the REGISTRY_REQUESTS_TASK_INITIATE to all nodes within the overlay
                     if( inArr.length == 1 )
                     {
-                        System.out.println("[InteractiveCommandParser_readAndProcess] Invalid command, another argument required");
+                        LOGGER.log(Level.WARN, "[InteractiveCommandParser_readAndProcess] Invalid command, another argument required");
                         continue;
                     }
                     int noOfMessages = Integer.parseInt(inArr[1]);
                     Registry registry = (Registry)node;
                     registry.initiateTasks(noOfMessages);
-                } else if( inArr[0].equals(CMD_ADDITIONAL_PRINT_STATISTICS) && node instanceof Registry){
-                    Registry registry = (Registry)node;
-                    StatisticsCollectorAndDisplay.printTrafficSummary(registry.getTrafficSummaries());
                 }
                 // Messaging Node commands
                 else if ( inArr[0].equals(CMD_PRINT_COUNTERS_AND_DIAGNOSTICS) && node instanceof MessagingNode) {

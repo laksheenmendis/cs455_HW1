@@ -31,7 +31,7 @@ public class StatisticsCollectorAndDisplay {
 
     private static void printLineSeperator3()
     {
-        System.out.println("--------------------------------------------------------------------------------------------------");
+        System.out.println("-------------------------------------------------------------------------------------------------------");
     }
 
     public static void printMessagingNodeLise(Set<Map.Entry<String,Integer>> entries)
@@ -127,7 +127,7 @@ public class StatisticsCollectorAndDisplay {
         String sumRcvdH = "Sum Values Received";
 
         printLineSeperator3();
-        String s = String.format("|%-10s|%-12s|%-17s|%-16s|%-16s|%-20s|",empty, pckSent, pckRcvd, pckRlyd, sumSentH, sumRcvdH);
+        String s = String.format("|%-10s|%-12s|%-17s|%-16s|%-16s|%-25s|",empty, pckSent, pckRcvd, pckRlyd, sumSentH, sumRcvdH);
         System.out.println(s);
         printLineSeperator3();
 
@@ -141,16 +141,26 @@ public class StatisticsCollectorAndDisplay {
 
             String node = "Node " + trafficSummary.getAssignedNodeID();
 
-            String s1 = String.format("|%10s|%,12d|%,17d|%,16d|%,16d|%,20d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
+            String s1 = String.format("|%10s|%,12d|%,17d|%,16d|%,16d|%,25d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
             System.out.println(s1);
             printLineSeperator3();
         }
 
         String sumS = "Sum";
-        String s2 = String.format("|%10s|%,12d|%,17d|%,16d|%,16d|%,20d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
+        String s2 = String.format("|%10s|%,12d|%,17d|%,16d|%,16d|%,25d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
         System.out.println(s2);
         printLineSeperator3();
 
 
+    }
+
+    public static void printRegistryReadyToStart() {
+
+        System.out.println("\n\n");
+        System.out.println("####################################################################");
+        System.out.println("#                                                                  #");
+        System.out.println("#               REGISTRY NOW READY TO INITIATE TASKS               #");
+        System.out.println("#                                                                  #");
+        System.out.println("####################################################################");
     }
 }

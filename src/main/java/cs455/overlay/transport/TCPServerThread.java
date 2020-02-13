@@ -47,10 +47,8 @@ public class TCPServerThread implements Runnable {
 
             } catch (EOFException ef) {
                 LOGGER.log(Level.ERROR,"[TCPServerThread_run] EOFException at " + node.getClass().getSimpleName() + ef.getStackTrace());
-                ef.printStackTrace();
             } catch (IOException e) {
-                LOGGER.log(Level.ERROR,"[TCPServerThread_run] Unable to accept incoming connections " + e.getMessage());
-                e.printStackTrace();
+                LOGGER.log(Level.ERROR,"[TCPServerThread_run] Unable to accept incoming connections " + e.getStackTrace());
             }
         }
     }

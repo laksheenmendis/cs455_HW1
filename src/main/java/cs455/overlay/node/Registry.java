@@ -3,10 +3,7 @@ package cs455.overlay.node;
 import cs455.overlay.transport.TCPConnection;
 import cs455.overlay.transport.TCPConnectionsCache;
 import cs455.overlay.transport.TCPServerThread;
-import cs455.overlay.util.Constants;
-import cs455.overlay.util.InteractiveCommandParser;
-import cs455.overlay.util.StatisticsCollectorAndDisplay;
-import cs455.overlay.util.TrafficSummaryTracker;
+import cs455.overlay.util.*;
 import cs455.overlay.wireformats.*;
 import cs455.overlay.wireformats.RegistrySendsNodeManifest.NodeInfo;
 import org.apache.log4j.Level;
@@ -29,10 +26,11 @@ public class Registry implements Node, Runnable {
     private TCPServerThread serverThread;
     private static org.apache.log4j.Logger LOGGER = org.apache.log4j.Logger.getLogger(Registry.class.getName());
     private TreeMap<Integer, NodeInfo[]> routingEntryTreeMap;
-    // both variables below are used as loop variables, hence read and write should happen in main memory
+    // 3 variables below are used as loop variables, hence read and write should happen in main memory
     // there should only be 1 copy
     private volatile int taskFinishedReportCount = 0;
     private volatile List<OverlayNodeReportsTrafficSummary> trafficSummaries;
+    private volatile int overlaySetupCount = 0;
 
     private Registry() {
         ipIDMap = new HashMap<>();
@@ -137,7 +135,17 @@ public class Registry implements Node, Runnable {
             LOGGER.log(Level.ERROR, event.getInfoString());
         } else {
             LOGGER.log(Level.INFO, event.getInfoString() + " at " + event.getSuccessStatus());
+            updateOverlaySetupCount();
         }
+    }
+
+    private synchronized void updateOverlaySetupCount()
+    {
+        overlaySetupCount++;
+    }
+
+    public synchronized int getOverlaySetupCount() {
+        return overlaySetupCount;
     }
 
     private void readTaskFinishedMsg(OverlayNodeReportsTaskFinished event, Socket socket) {
@@ -177,6 +185,7 @@ public class Registry implements Node, Runnable {
             deregistrationResponse = getDeregistrationResponse(event.getAssignedID());
             ipIDMap.remove(generateKey(serverIPAddress, serverPort));
             TCPConnectionsCache.removeEntry(socket);
+            idSocketMap.remove(event.getAssignedID());
         } else //request is invalid
         {
             deregistrationResponse = getDeregistrationResponse(-1);
@@ -187,6 +196,7 @@ public class Registry implements Node, Runnable {
             try {
                 sender.sendData(deregistrationResponse.getBytes());
                 LOGGER.log(Level.INFO, "[Registry_deregisterMessagingNode] sent");
+                socket.close();
             } catch (IOException e) {
                 LOGGER.log(Level.ERROR,"[Registry_deregisterMessagingNode] Couldn't communicate to Messaging Node with ID " + event.getAssignedID() + " " + e.getStackTrace());
                 e.printStackTrace();
@@ -310,6 +320,12 @@ public class Registry implements Node, Runnable {
             }
         }
         LOGGER.log(Level.INFO,"[Registry_setupOverlay] Setting up overlay completed");
+
+        // this thread will keep track of NODE_REPORTS_OVERLAY_SETUP_STATUS messages from Messaging Nodes
+        OverlaySetupSummaryTracker overlaySetupSummaryTracker = new OverlaySetupSummaryTracker(this);
+        Thread overlaySetupTrackerThread = new Thread(overlaySetupSummaryTracker);
+        overlaySetupTrackerThread.start();
+
     }
 
     /**
@@ -384,6 +400,9 @@ public class Registry implements Node, Runnable {
         //initialize/re-initialize the list
         setTrafficSummaries(new ArrayList<>());
 
+        //initialize/re-initialize taskFinishedCount
+        resetTaskFinishedReportCount();
+
         // send to all existing messages
         for(Map.Entry<Integer, Socket> entry : idSocketMap.entrySet())
         {
@@ -429,5 +448,10 @@ public class Registry implements Node, Runnable {
 
     public synchronized void setTrafficSummaries(List<OverlayNodeReportsTrafficSummary> trafficSummaries) {
         this.trafficSummaries = trafficSummaries;
+    }
+
+    public synchronized void resetTaskFinishedReportCount()
+    {
+        this.taskFinishedReportCount = 0;
     }
 }
