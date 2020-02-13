@@ -2,7 +2,7 @@ package cs455.overlay.transport;
 
 import cs455.overlay.node.Node;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
+import org.apache.log4j.Level;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class TCPServerThread implements Runnable {
         } else {    //Messaging Node starting server
             this.serverSocket = getServerSocket();
         }
-        LOGGER.log(Priority.INFO,"Listening on port " + serverSocket.getLocalPort());
+        LOGGER.log(Level.INFO,"Listening on port " + serverSocket.getLocalPort());
     }
 
     @Override
@@ -46,10 +46,10 @@ public class TCPServerThread implements Runnable {
                 thread.start();
 
             } catch (EOFException ef) {
-                LOGGER.log(Priority.ERROR,"[TCPServerThread_run] EOFException at " + node.getClass().getSimpleName() + ef.getStackTrace());
+                LOGGER.log(Level.ERROR,"[TCPServerThread_run] EOFException at " + node.getClass().getSimpleName() + ef.getStackTrace());
                 ef.printStackTrace();
             } catch (IOException e) {
-                LOGGER.log(Priority.ERROR,"[TCPServerThread_run] Unable to accept incoming connections " + e.getMessage());
+                LOGGER.log(Level.ERROR,"[TCPServerThread_run] Unable to accept incoming connections " + e.getMessage());
                 e.printStackTrace();
             }
         }

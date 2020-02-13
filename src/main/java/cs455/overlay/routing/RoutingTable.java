@@ -7,10 +7,6 @@ public class RoutingTable {
     //(key,value) -> (nodeID, routingEntry)
     public static HashMap<Integer, RoutingEntry> routingMap = new HashMap<>();
 
-    public RoutingTable() {
-        //TODO setup the routing table here
-    }
-
     public HashMap<Integer, RoutingEntry> getRoutingMap() {
         return routingMap;
     }

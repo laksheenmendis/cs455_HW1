@@ -3,6 +3,7 @@ package cs455.overlay.util;
 import cs455.overlay.node.MessagingNode;
 import cs455.overlay.node.Node;
 import cs455.overlay.node.Registry;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -99,17 +100,15 @@ public class InteractiveCommandParser implements Runnable{
                 }
                 else
                 {
-                    LOGGER.info("[InteractiveCommandParser_readAndProcess] Invalid command");
+                    LOGGER.log(Level.WARN,"[InteractiveCommandParser_readAndProcess] Invalid command");
                 }
             } catch (SocketException se)
             {
-                LOGGER.info("[InteractiveCommandParser_readAndProcess] " + se.getStackTrace());
+                LOGGER.log(Level.ERROR,"[InteractiveCommandParser_readAndProcess] " + se.getStackTrace());
                 se.printStackTrace();
-                break;
             } catch (IOException e) {
-                LOGGER.info("[InteractiveCommandParser_readAndProcess] " + e.getStackTrace());
+                LOGGER.log(Level.ERROR,"[InteractiveCommandParser_readAndProcess] " + e.getStackTrace());
                 e.printStackTrace();
-                break;
             }
         }
     }

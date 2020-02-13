@@ -4,8 +4,7 @@ import cs455.overlay.node.Node;
 import cs455.overlay.wireformats.Event;
 import cs455.overlay.wireformats.EventFactory;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
-
+import org.apache.log4j.Level;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -30,7 +29,7 @@ public class TCPConnection {
             dout.writeInt(dataLength);
             dout.write(dataToSend, 0, dataLength);
             dout.flush();
-            LOGGER.log(Priority.INFO,"[TCPSender_sendData] data sent ");
+            LOGGER.log(Level.INFO,"[TCPSender_sendData] data sent ");
         }
     }
 
@@ -63,17 +62,17 @@ public class TCPConnection {
                         System.out.println("\nEVENT IS NULL\n");
                     }
 
-                    LOGGER.log(Priority.INFO,"[TCPReceiverThread_run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
+                    LOGGER.log(Level.INFO,"[TCPReceiverThread_run] " + event.getClass().getSimpleName() + " event received at " + node.getClass().getSimpleName());
                     node.onEvent(event, socket);
 
                 } catch (EOFException ef) {
-                    LOGGER.log(Priority.ERROR,"[TCPReceiverThread_run] EOFException at " + node.getClass().getSimpleName() + ef.getStackTrace());
+                    LOGGER.log(Level.ERROR,"[TCPReceiverThread_run] EOFException at " + node.getClass().getSimpleName() + ef.getStackTrace());
                     ef.printStackTrace();
                 }catch (SocketException se) {
-                    LOGGER.log(Priority.ERROR,"[TCPReceiverThread_run] SocketException at " + node.getClass().getSimpleName() + se.getStackTrace());
+                    LOGGER.log(Level.ERROR,"[TCPReceiverThread_run] SocketException at " + node.getClass().getSimpleName() + se.getStackTrace());
                     se.printStackTrace();
                 } catch (IOException ioe) {
-                    LOGGER.log(Priority.ERROR,"[TCPReceiverThread_run] IOException " +  node.getClass().getSimpleName() + ioe.getStackTrace());
+                    LOGGER.log(Level.ERROR,"[TCPReceiverThread_run] IOException " +  node.getClass().getSimpleName() + ioe.getStackTrace());
                     ioe.printStackTrace();
                 }
             }

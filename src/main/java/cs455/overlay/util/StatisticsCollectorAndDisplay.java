@@ -14,9 +14,9 @@ public class StatisticsCollectorAndDisplay {
 
     private static void printSeparator()
     {
-        System.out.println("\n\n\n");
+        System.out.println("\n\n");
         System.out.println("***********************************************************************************************");
-        System.out.println("\n\n\n");
+        System.out.println("\n\n");
     }
 
     private static void printLineSeperator1()

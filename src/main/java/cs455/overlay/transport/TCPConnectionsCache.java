@@ -1,7 +1,6 @@
 package cs455.overlay.transport;
 
 import cs455.overlay.util.Constants;
-
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
