@@ -214,12 +214,27 @@ public class Registry implements Node, Runnable {
         String serverIPAddress = new String(event.getIpAddress());
         int serverPort = event.getPortNumber();
 
-        int ID = getID(serverIPAddress, serverPort);
-        idSocketMap.put(ID, socket);
+        //check whether messaging node was registered earlier
+        boolean alreadyRegistered = idSocketMap.values().contains(socket);
+
+        // check whether the ip address in the message matches the address where the request originated
+        boolean trueOrigin = socket.getInetAddress().getHostAddress().equals(serverIPAddress);
+
+        RegistryReportsRegistrationStatus registrationResponse;
+        int ID = 0;
+        if( !alreadyRegistered && trueOrigin )
+        {
+            ID = getID(serverIPAddress, serverPort);
+            idSocketMap.put(ID, socket);
+            registrationResponse = getRegistrationResponse(ID);
+        }
+        else
+        {
+            registrationResponse = getRegistrationResponse(-1);
+        }
 
         try {
             TCPConnection.TCPSender sender = new TCPConnection.TCPSender(socket);
-            RegistryReportsRegistrationStatus registrationResponse = getRegistrationResponse(ID);
             sender.sendData(registrationResponse.getBytes());
             LOGGER.log(Level.INFO, "[Registry_registerMessagingNode] sent");
         } catch (IOException e) {
@@ -253,7 +268,7 @@ public class Registry implements Node, Runnable {
         RegistryReportsRegistrationStatus registrationStatus = (RegistryReportsRegistrationStatus) eventFactory.createEventByType(Protocol.REGISTRY_REPORTS_REGISTRATION_STATUS);
         registrationStatus.setSuccessStatus(ID);
         String info = Constants.REGISTRATION_SUCCESSFULL + "The number of messaging nodes currently constituting the overlay is " + ipIDMap.size();
-        registrationStatus.setInfoString(info);
+        registrationStatus.setInfoString(ID != -1 ? info : Constants.REGISTRATION_FAILED);
         LOGGER.log(Level.INFO,"[Registry_getRegistrationResponse] Registration Status response generated ");
         return registrationStatus;
     }
