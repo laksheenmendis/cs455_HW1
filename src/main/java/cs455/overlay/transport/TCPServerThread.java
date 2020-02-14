@@ -15,8 +15,7 @@ public class TCPServerThread implements Runnable {
     private final int STARTING_PORT_NUMBER = 49152;
     private final int ENDING_PORT_NUMBER = 65535;
     private static Logger LOGGER = Logger.getLogger(TCPServerThread.class.getName());
-    private TCPConnection.TCPSender sender;
-    private Node node;
+    private final Node node;
 
     public TCPServerThread(int port, Node node) throws IOException {
         this.node = node;

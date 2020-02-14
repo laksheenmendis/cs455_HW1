@@ -34,7 +34,7 @@ public class StatisticsCollectorAndDisplay {
         System.out.println("-------------------------------------------------------------------------------------------------------");
     }
 
-    public static void printMessagingNodeLise(Set<Map.Entry<String,Integer>> entries)
+    public static void printMessagingNodeList(Set<Map.Entry<String,Integer>> entries)
     {
         printSeparator();
         printLineSeperator1();

@@ -3,9 +3,12 @@ package cs455.overlay.util;
 import cs455.overlay.node.Registry;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
-
 import static java.lang.Thread.sleep;
 
+/*
+    This thread is used to keep track of the number of traffic summaries received from
+    messaging nodes and display the overall summary, when all traffic summaries have arrived.
+ */
 public class TrafficSummaryTracker implements Runnable {
 
     private Registry registry;

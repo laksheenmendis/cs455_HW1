@@ -7,17 +7,14 @@ import java.io.IOException;
 
 public class EventFactory {
 
-    private static EventFactory instance;
+    private static EventFactory instance = new EventFactory();
 
-    private static EventFactory EventFactory() {
-        if (instance == null) {
-            instance = new EventFactory();
-        }
-        return instance;
+    private EventFactory() {
+        // restrict instantiation
     }
 
     public static EventFactory getInstance() {
-        return EventFactory();
+        return instance;
     }
 
     public Event createEvent(byte[] marshalledBytes) throws IOException {

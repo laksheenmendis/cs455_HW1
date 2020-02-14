@@ -7,6 +7,7 @@ import java.util.Map;
 
 public class TCPConnectionsCache {
 
+    // key, value => ipAddress#port, socket
     private static Map<String, Socket> connectionsCache = new HashMap<>();
 
     public static void add( Socket socket)

@@ -37,7 +37,7 @@ public class TCPConnection {
     }
 
     public static class TCPReceiverThread implements Runnable{
-        private Socket socket;
+        private final Socket socket;
         private DataInputStream din;
         private byte[] data;
         private Node node;

@@ -7,7 +7,6 @@ import cs455.overlay.util.*;
 import cs455.overlay.wireformats.*;
 import cs455.overlay.wireformats.RegistrySendsNodeManifest.NodeInfo;
 import org.apache.log4j.Level;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
@@ -426,7 +425,7 @@ public class Registry implements Node, Runnable {
     // List downs information about each messaging node
     public void listMessagingNode() {
 
-        StatisticsCollectorAndDisplay.printMessagingNodeLise(ipIDMap.entrySet());
+        StatisticsCollectorAndDisplay.printMessagingNodeList(ipIDMap.entrySet());
     }
 
     public void listRoutingTables() {
