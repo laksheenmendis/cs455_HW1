@@ -103,3 +103,34 @@ Description of files included (src/main/resources);
 log4j.properties :
 Includes configuration for log4j in key-value pairs.
 Please mark the parent folder (src/main/resources) as a source folder.
+
+
+Steps to follow:
+
+1. Start Registry at a port
+
+2. Start Messaging Nodes, providing hostname and port of the Registry.
+
+3. At Registry, type command 'list-messaging-nodes' to list the registered messaging nodes
+    A sample output is provided below.
+
+4. Once above command list downs all messaging nodes, type 'setup-overlay' with the
+    appropriate number of routing table size.
+
+5. In a while, if required, you can view the routing tables at each messaging node with the command,
+    'list-routing-tables'. A sample output is provided below.
+
+5. Once all messaging nodes successfully setup the overlay, Registry will print out the following banner.
+            ####################################################################
+            #                                                                  #
+            #               REGISTRY NOW READY TO INITIATE TASKS               #
+            #                                                                  #
+            ####################################################################
+
+6. Now you can specify 'start' along with the number of messages, to initiate the tasks at each messaging node.
+
+7. Once messaging nodes finishes sending/receiving/relaying messages, they will notify the registry.
+
+8. Next, Registry will automatically print out the traffic summaries in the console.
+    A sample output is provided below.
+
