@@ -31,7 +31,7 @@ public class StatisticsCollectorAndDisplay {
 
     private static void printLineSeperator3()
     {
-        System.out.println("-----------------------------------------------------------------------------------------------------------------");
+        System.out.println("--------------------------------------------------------------------------------------------------------------------");
     }
 
     public static void printMessagingNodeList(Set<Map.Entry<String,Integer>> entries)
@@ -127,7 +127,7 @@ public class StatisticsCollectorAndDisplay {
         String sumRcvdH = "Sum Values Received";
 
         printLineSeperator3();
-        String s = String.format("|%-10s|%-12s|%-17s|%-16s|%-30s|%-30s|",empty, pckSent, pckRcvd, pckRlyd, sumSentH, sumRcvdH);
+        String s = String.format("|%-10s|%-12s|%-17s|%-16s|%-27s|%-27s|",empty, pckSent, pckRcvd, pckRlyd, sumSentH, sumRcvdH);
         System.out.println(s);
         printLineSeperator3();
 
@@ -141,13 +141,13 @@ public class StatisticsCollectorAndDisplay {
 
             String node = "Node " + trafficSummary.getAssignedNodeID();
 
-            String s1 = String.format("|%10s|%,12d|%,17d|%,16d|%,30d|%,30d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
+            String s1 = String.format("|%10s|%,12d|%,17d|%,16d|%,27d|%,27d|",node, trafficSummary.getTotalPacketsSent(), trafficSummary.getTotalPacketsReceived(), trafficSummary.getTotalPacketsRelayed(), trafficSummary.getSumOfPacketDataSent(), trafficSummary.getSumOfPacketDataReceived());
             System.out.println(s1);
             printLineSeperator3();
         }
 
         String sumS = "Sum";
-        String s2 = String.format("|%10s|%,12d|%,17d|%,16d|%,30d|%,30d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
+        String s2 = String.format("|%10s|%,12d|%,17d|%,16d|%,27d|%,27d|",sumS, totPckSent, totPckRcvd, totPckRlyd, totalSentSummation, totalRcvdSummation);
         System.out.println(s2);
         printLineSeperator3();
 
