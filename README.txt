@@ -1,3 +1,6 @@
+Assignment requirements/description can be found at https://drive.google.com/file/d/1IbJhLwu2wAAZkJ73Dq5geA9eXBrrz_Q-/view?usp=sharing
+
+
 Routing Packets Within a Structured Peer-to-Peer (P2P) Network Overlay
 
 Steps to follow:
